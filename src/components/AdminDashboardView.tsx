@@ -38,6 +38,7 @@ import {
   DisabledEntitiesMap,
 } from '../types';
 import { CLASSES_LIST, MOCK_ENROLLED_STUDENTS } from '../data/curriculumData';
+import { TestBuilderModal } from './TestBuilderModal';
 
 Chart.register(...registerables);
 
@@ -53,6 +54,8 @@ interface AdminDashboardViewProps {
   onDeleteSubject: (classId: ClassLevel, subjectId: string) => void;
   onAddTopic: (classId: ClassLevel, subjectId: string, topic: ChapterTopic) => void;
   onDeleteTopic: (classId: ClassLevel, subjectId: string, topicId: string) => void;
+  onAddTest: (classId: ClassLevel, subjectId: string, topicId: string, test: TopicTest) => void;
+  onDeleteTest: (classId: ClassLevel, subjectId: string, topicId: string, testId: string) => void;
   onSetAllGrades: (enabled: boolean) => void;
   onBackToHome: () => void;
   onChangePasswordClick: () => void;
@@ -70,6 +73,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onDeleteSubject,
   onAddTopic,
   onDeleteTopic,
+  onAddTest,
+  onDeleteTest,
   onSetAllGrades,
   onBackToHome,
   onChangePasswordClick,
@@ -98,11 +103,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   // Delete confirmation modals
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<{
-    type: 'subject' | 'topic';
+    type: 'subject' | 'topic' | 'test';
     classId: ClassLevel;
     subjectId?: string;
     topicId?: string;
+    testId?: string;
     name: string;
+  } | null>(null);
+
+  // Test Builder Modal target
+  const [testBuilderTarget, setTestBuilderTarget] = useState<{
+    topic: ChapterTopic;
   } | null>(null);
 
   // Toast alert
@@ -375,6 +386,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         setSelectedTopicId(null);
       }
       showNotice(`Topic "${deleteConfirmTarget.name}" deleted.`);
+    } else if (
+      deleteConfirmTarget.type === 'test' &&
+      deleteConfirmTarget.subjectId &&
+      deleteConfirmTarget.topicId &&
+      deleteConfirmTarget.testId
+    ) {
+      onDeleteTest(
+        deleteConfirmTarget.classId,
+        deleteConfirmTarget.subjectId,
+        deleteConfirmTarget.topicId,
+        deleteConfirmTarget.testId
+      );
+      showNotice(`Test "${deleteConfirmTarget.name}" deleted from topic.`);
     }
 
     setDeleteConfirmTarget(null);
@@ -838,11 +862,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* LEVEL 4: TESTS INSIDE THIS TOPIC */}
                     {isTopicSelected && (
                       <div className="mt-4 pt-4 border-t border-[#F0E6D8] space-y-2.5 bg-[#FAF7F2] p-3 rounded-lg">
-                        <div className="flex items-center justify-between text-xs font-bold text-[#6D5A4C] mb-2">
-                          <span>Level 4: Topic Tests & Assessments ({topic.tests.length})</span>
-                          <span className="text-[11px] font-semibold text-[#8C7A6B]">
-                            Toggle test access independently
-                          </span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8DEC8] pb-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#6D5A4C]">Level 4: Topic Tests & Assessments ({topic.tests.length})</span>
+                            <span className="hidden sm:inline-block text-[11px] font-semibold text-[#8C7A6B]">
+                              · Independent Toggle & Deletion
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setTestBuilderTarget({ topic })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E7D32] hover:bg-[#256828] text-white text-xs font-bold transition-colors shadow-xs cursor-pointer self-start sm:self-auto"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add New Test</span>
+                          </button>
                         </div>
 
                         {topic.tests.map((test) => {
@@ -884,6 +919,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 >
                                   {isTestEnabled ? 'Available' : 'Disabled'}
                                 </span>
+
                                 <button
                                   type="button"
                                   onClick={() => onToggleTest(test.id)}
@@ -895,6 +931,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   ) : (
                                     <ToggleLeft className="w-5 h-5 text-slate-400" />
                                   )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeleteConfirmTarget({
+                                      type: 'test',
+                                      classId: selectedGradeId,
+                                      subjectId: activeSubject.id,
+                                      topicId: topic.id,
+                                      testId: test.id,
+                                      name: test.title,
+                                    })
+                                  }
+                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                  title="Delete Test"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -1225,7 +1279,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* CONFIRMATION MODAL: DELETE SUBJECT OR TOPIC */}
+      {/* TEST BUILDER MODAL */}
+      {testBuilderTarget && activeSubject && (
+        <TestBuilderModal
+          isOpen={true}
+          classId={selectedGradeId}
+          subjectId={activeSubject.id}
+          subjectName={activeSubject.name}
+          topic={testBuilderTarget.topic}
+          onClose={() => setTestBuilderTarget(null)}
+          onSaveTest={(cId, sId, tId, newTest) => {
+            onAddTest(cId, sId, tId, newTest);
+            showNotice(`Test "${newTest.title}" added to ${testBuilderTarget.topic.title}!`);
+          }}
+        />
+      )}
+
+      {/* CONFIRMATION MODAL: DELETE SUBJECT, TOPIC, OR TEST */}
       {deleteConfirmTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-sm bg-white rounded-3xl border border-[#DFD3C3] shadow-2xl p-6 text-center">
@@ -1237,8 +1307,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               Confirm Deletion
             </h4>
             <p className="text-xs text-[#7A6858] mt-1.5 font-medium">
-              Are you sure you want to delete {deleteConfirmTarget.type === 'subject' ? 'the subject' : 'the topic'}{' '}
-              <strong>"{deleteConfirmTarget.name}"</strong>? This will remove all associated tests within this session.
+              Are you sure you want to delete {
+                deleteConfirmTarget.type === 'subject'
+                  ? 'the subject'
+                  : deleteConfirmTarget.type === 'topic'
+                  ? 'the topic'
+                  : 'the test'
+              }{' '}
+              <strong>"{deleteConfirmTarget.name}"</strong>? This action cannot be undone.
             </p>
 
             <div className="mt-5 flex items-center justify-center gap-3">

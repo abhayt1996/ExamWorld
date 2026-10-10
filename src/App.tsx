@@ -94,6 +94,48 @@ export default function App() {
     }
   }, []);
 
+  // Strict Middleware-like Route Guard: checks sessionStorage on view or test state change
+  useEffect(() => {
+    const session = getActiveAuthSession();
+
+    if (activeView === 'dashboard') {
+      const isAdminTarget = userProfile.role === 'admin';
+      const guard = executeRouteGuard('dashboard', isAdminTarget);
+      if (!guard.allowed) {
+        setActiveView(guard.targetView);
+        if (guard.securityMessage) {
+          setSecurityNotice(guard.securityMessage);
+          setTimeout(() => setSecurityNotice(null), 4000);
+        }
+      }
+    } else if (activeView === 'profile') {
+      const guard = executeRouteGuard('profile', false);
+      if (!guard.allowed) {
+        setActiveView(guard.targetView);
+        if (guard.securityMessage) {
+          setSecurityNotice(guard.securityMessage);
+          setTimeout(() => setSecurityNotice(null), 4000);
+        }
+      }
+    }
+  }, [activeView, userProfile.role]);
+
+  // Protected Test Route Guard: enforces active session before test taking
+  useEffect(() => {
+    if (activeTestState) {
+      const session = getActiveAuthSession();
+      if (!session) {
+        setActiveTestState(null);
+        setActiveView('classes');
+        setIsLoginModalOpen(true);
+        setSecurityNotice(
+          'Security Alert: Unauthorized test access blocked. Valid mobile session required.'
+        );
+        setTimeout(() => setSecurityNotice(null), 4000);
+      }
+    }
+  }, [activeTestState]);
+
   // Safe navigation with client-side Route Guard middleware
   const navigateToView = (
     targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard',
@@ -404,6 +446,101 @@ export default function App() {
     });
   };
 
+  // Add Test dynamically into selected topic inside curriculum store
+  const handleAddTest = (
+    classId: ClassLevel,
+    subjectId: string,
+    topicId: string,
+    newTest: TopicTest
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updated = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.map((t) => {
+              if (t.id === topicId) {
+                return {
+                  ...t,
+                  tests: [...t.tests, newTest],
+                };
+              }
+              return t;
+            }),
+          };
+        }
+        return sub;
+      });
+
+      // Real-time synchronization if this subject is currently active for students
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => {
+          if (!s) return null;
+          return {
+            ...s,
+            topics: s.topics.map((t) =>
+              t.id === topicId ? { ...t, tests: [...t.tests, newTest] } : t
+            ),
+          };
+        });
+      }
+
+      return {
+        ...prev,
+        [classId]: updated,
+      };
+    });
+  };
+
+  // Delete Test dynamically from selected topic inside curriculum store
+  const handleDeleteTest = (
+    classId: ClassLevel,
+    subjectId: string,
+    topicId: string,
+    testId: string
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updated = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.map((t) => {
+              if (t.id === topicId) {
+                return {
+                  ...t,
+                  tests: t.tests.filter((test) => test.id !== testId),
+                };
+              }
+              return t;
+            }),
+          };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => {
+          if (!s) return null;
+          return {
+            ...s,
+            topics: s.topics.map((t) =>
+              t.id === topicId
+                ? { ...t, tests: t.tests.filter((test) => test.id !== testId) }
+                : t
+            ),
+          };
+        });
+      }
+
+      return {
+        ...prev,
+        [classId]: updated,
+      };
+    });
+  };
+
   // When a test is completed in the test runner, dynamically append to user history
   const handleRecordTestCompleted = (score: number, totalMarks: number, percentage: number) => {
     if (!activeTestState) return;
@@ -542,6 +679,8 @@ export default function App() {
                 onDeleteSubject={handleDeleteSubject}
                 onAddTopic={handleAddTopic}
                 onDeleteTopic={handleDeleteTopic}
+                onAddTest={handleAddTest}
+                onDeleteTest={handleDeleteTest}
                 onSetAllGrades={handleSetAllGrades}
                 onBackToHome={handleBackToClasses}
                 onChangePasswordClick={() => navigateToView('profile')}
