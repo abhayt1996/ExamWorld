@@ -140,8 +140,14 @@ export const Header: React.FC<HeaderProps> = ({
                   aria-label="User menu"
                   aria-expanded={isDropdownOpen}
                 >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#D46244] to-[#B3492F] text-white font-heading font-black text-sm flex items-center justify-center shadow-xs">
-                    {avatarInitial}
+                  <div className={`w-9 h-9 rounded-full text-white font-heading font-black text-sm flex items-center justify-center shadow-xs ${
+                    user?.role === 'admin' ? 'bg-[#1E293B]' : 'bg-gradient-to-br from-[#D46244] to-[#B3492F]'
+                  }`}>
+                    {user?.role === 'admin' ? (
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      avatarInitial
+                    )}
                   </div>
                   <ChevronDown
                     className={`w-4 h-4 text-[#6E5D4F] transition-transform duration-200 hidden sm:block ${
@@ -152,24 +158,34 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* User Profile Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl border border-[#DFD3C3] shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2.5 w-72 bg-white rounded-2xl border border-[#DFD3C3] shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                     {/* User Summary Header */}
                     <div className="px-4 py-3 border-b border-[#F0E6D8] bg-[#FAF6F0]/60">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D46244] to-[#B3492F] text-white font-heading font-black text-base flex items-center justify-center shadow-xs shrink-0">
-                          {avatarInitial}
+                        <div className={`w-10 h-10 rounded-full text-white font-heading font-black text-base flex items-center justify-center shadow-xs shrink-0 ${
+                          user?.role === 'admin' ? 'bg-[#0F172A]' : 'bg-gradient-to-br from-[#D46244] to-[#B3492F]'
+                        }`}>
+                          {user?.role === 'admin' ? (
+                            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                          ) : (
+                            avatarInitial
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-heading font-bold text-[#2F241C] truncate">
                             {user?.name}
                           </p>
                           <p className="text-[11px] font-semibold text-[#8C7A6B] truncate">
-                            +91 {user?.mobile}
+                            {user?.role === 'admin' ? 'Master Admin (abt1996)' : `+91 ${user?.mobile}`}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-2 text-[10px] font-bold text-[#5C4535] bg-[#EFE3D5] px-2 py-0.5 rounded-md inline-block">
-                        Class {user?.currentClass} Student
+                      <div className="mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md inline-block">
+                        {user?.role === 'admin' ? (
+                          <span className="bg-[#1E293B] text-emerald-400 px-2 py-0.5 rounded">System Administrator</span>
+                        ) : (
+                          <span className="bg-[#EFE3D5] text-[#5C4535] px-2 py-0.5 rounded">Class {user?.currentClass} Student</span>
+                        )}
                       </div>
                     </div>
 
@@ -184,7 +200,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className="w-full px-4 py-2.5 text-left hover:bg-[#FAF4ED] flex items-center gap-3 transition-colors cursor-pointer"
                       >
                         <UserIcon className="w-4 h-4 text-[#D46244]" />
-                        <span>My Profile (Edit Info)</span>
+                        <span>{user?.role === 'admin' ? 'Admin Profile & Change Password' : 'My Profile (Edit Info)'}</span>
                       </button>
 
                       {/* Option 2: Dashboard */}
@@ -196,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className="w-full px-4 py-2.5 text-left hover:bg-[#FAF4ED] flex items-center gap-3 transition-colors cursor-pointer"
                       >
                         <LayoutDashboard className="w-4 h-4 text-[#D46244]" />
-                        <span>Dashboard & Progress Graphs</span>
+                        <span>{user?.role === 'admin' ? 'Admin Dashboard (Grade Control & Telemetry)' : 'Dashboard & Progress Graphs'}</span>
                       </button>
 
                       <div className="my-1 border-t border-[#F2EAE0]" />

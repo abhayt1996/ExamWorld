@@ -12,8 +12,14 @@ import { TestRunnerModal } from './components/TestRunnerModal';
 import { LoginModal } from './components/LoginModal';
 import { ProfileView } from './components/ProfileView';
 import { DashboardView } from './components/DashboardView';
+import { AdminDashboardView } from './components/AdminDashboardView';
 import { Footer } from './components/Footer';
-import { CLASSES_LIST, INITIAL_USER_PROFILE } from './data/curriculumData';
+import {
+  CLASSES_LIST,
+  INITIAL_USER_PROFILE,
+  INITIAL_ADMIN_PROFILE,
+  DEFAULT_GRADE_STATUS,
+} from './data/curriculumData';
 import {
   ClassLevel,
   Subject,
@@ -22,6 +28,7 @@ import {
   ActiveTestState,
   UserProfile,
   UserTestRecord,
+  GradeStatusMap,
 } from './types';
 
 export default function App() {
@@ -34,6 +41,10 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile>(INITIAL_USER_PROFILE);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
+  // Admin Master State
+  const [adminPassword, setAdminPassword] = useState<string>('12345');
+  const [gradeStatus, setGradeStatus] = useState<GradeStatusMap>(DEFAULT_GRADE_STATUS);
+
   // Test Runner State & Pending test queue for login prompt
   const [activeTestState, setActiveTestState] = useState<ActiveTestState | null>(null);
   const [pendingTestForLogin, setPendingTestForLogin] = useState<{
@@ -43,6 +54,10 @@ export default function App() {
 
   // Navigate to Subject Selection View
   const handleSelectClass = (classId: ClassLevel) => {
+    // If grade is disabled and user is not admin, prevent access
+    if (gradeStatus[classId] === false && !(isLoggedIn && userProfile.role === 'admin')) {
+      return;
+    }
     setSelectedClassId(classId);
     setSelectedSubject(null);
     setActiveView('subjects');
@@ -104,11 +119,12 @@ export default function App() {
     setIsLoginModalOpen(true);
   };
 
-  // Handle successful login
-  const handleLoginSuccess = (userData: Partial<UserProfile>) => {
+  // Handle Student Login via OTP
+  const handleStudentSuccess = (userData: Partial<UserProfile>) => {
     setIsLoggedIn(true);
     setUserProfile((prev) => ({
       ...prev,
+      role: 'student',
       name: userData.name || prev.name,
       mobile: userData.mobile || prev.mobile,
       currentClass: userData.currentClass || selectedClassId,
@@ -122,9 +138,22 @@ export default function App() {
     }
   };
 
+  // Handle Admin Login (abt1996 / 12345)
+  const handleAdminSuccess = () => {
+    setIsLoggedIn(true);
+    setUserProfile({
+      ...INITIAL_ADMIN_PROFILE,
+    });
+    setIsLoginModalOpen(false);
+    // Directly navigate admin to the control panel dashboard!
+    setActiveView('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Handle Logout
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setUserProfile(INITIAL_USER_PROFILE);
     setActiveView('classes');
   };
 
@@ -136,6 +165,32 @@ export default function App() {
         setSelectedClassId(updated.currentClass);
       }
       return updatedProfile;
+    });
+  };
+
+  // Handle Admin Change Password
+  const handleAdminChangePassword = (newPass: string) => {
+    setAdminPassword(newPass);
+  };
+
+  // Handle Toggle Grade independently by Admin
+  const handleToggleGrade = (classId: ClassLevel) => {
+    setGradeStatus((prev) => ({
+      ...prev,
+      [classId]: !prev[classId],
+    }));
+  };
+
+  // Handle Set All Grades
+  const handleSetAllGrades = (enabled: boolean) => {
+    setGradeStatus({
+      '6': enabled,
+      '7': enabled,
+      '8': enabled,
+      '9': enabled,
+      '10': enabled,
+      '11': enabled,
+      '12': enabled,
     });
   };
 
@@ -164,6 +219,7 @@ export default function App() {
   };
 
   const selectedClassInfo = CLASSES_LIST.find((c) => c.id === selectedClassId);
+  const isAdmin = isLoggedIn && userProfile.role === 'admin';
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2A26] flex flex-col font-sans">
@@ -190,7 +246,11 @@ export default function App() {
         {/* View 1: Home Page (Class Selection) */}
         {activeView === 'classes' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <ClassSelectionView onSelectClass={handleSelectClass} />
+            <ClassSelectionView
+              onSelectClass={handleSelectClass}
+              gradeStatus={gradeStatus}
+              isAdmin={isAdmin}
+            />
           </div>
         )}
 
@@ -224,21 +284,34 @@ export default function App() {
           <div className="animate-in fade-in duration-200">
             <ProfileView
               user={userProfile}
+              currentAdminPassword={adminPassword}
               onUpdateProfile={handleUpdateProfile}
+              onAdminChangePassword={handleAdminChangePassword}
               onBackToHome={handleBackToClasses}
               onOpenDashboard={() => setActiveView('dashboard')}
             />
           </div>
         )}
 
-        {/* Dedicated Progress Dashboard View */}
+        {/* Progress Dashboard View: Admin Control Panel OR Student Visual Progress Graphs */}
         {activeView === 'dashboard' && (
           <div className="animate-in fade-in duration-200">
-            <DashboardView
-              user={userProfile}
-              onBackToHome={handleBackToClasses}
-              onSelectClassToPractice={handleBackToClasses}
-            />
+            {isAdmin ? (
+              <AdminDashboardView
+                adminUser={userProfile}
+                gradeStatus={gradeStatus}
+                onToggleGrade={handleToggleGrade}
+                onSetAllGrades={handleSetAllGrades}
+                onBackToHome={handleBackToClasses}
+                onChangePasswordClick={() => setActiveView('profile')}
+              />
+            ) : (
+              <DashboardView
+                user={userProfile}
+                onBackToHome={handleBackToClasses}
+                onSelectClassToPractice={handleBackToClasses}
+              />
+            )}
           </div>
         )}
       </main>
@@ -252,16 +325,18 @@ export default function App() {
         />
       )}
 
-      {/* Mobile + OTP Verification Login Modal */}
+      {/* Unified Login Modal (Student OTP vs Admin abt1996) */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => {
           setIsLoginModalOpen(false);
           setPendingTestForLogin(null);
         }}
-        onSuccess={handleLoginSuccess}
+        onStudentSuccess={handleStudentSuccess}
+        onAdminSuccess={handleAdminSuccess}
         targetTestTitle={pendingTestForLogin?.test.title}
         defaultClass={selectedClassId}
+        currentAdminPassword={adminPassword}
       />
 
       {/* Global Clean Platform Footer */}

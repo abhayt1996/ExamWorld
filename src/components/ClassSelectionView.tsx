@@ -1,10 +1,12 @@
 import React from 'react';
-import { Sparkles, ArrowRight, BookOpenCheck, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, BookOpenCheck, ShieldCheck, CheckCircle2, Lock } from 'lucide-react';
 import { CLASSES_LIST } from '../data/curriculumData';
-import { ClassData, ClassLevel } from '../types';
+import { ClassData, ClassLevel, GradeStatusMap } from '../types';
 
 interface ClassSelectionViewProps {
   onSelectClass: (classId: ClassLevel) => void;
+  gradeStatus?: GradeStatusMap;
+  isAdmin?: boolean;
 }
 
 // Dedicated tactile 3D styling specifications per class for rich pastel tactile realism
@@ -101,7 +103,11 @@ const CLASS_3D_STYLES: Record<
   },
 };
 
-export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelectClass }) => {
+export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({
+  onSelectClass,
+  gradeStatus,
+  isAdmin = false,
+}) => {
   return (
     <div className="w-full">
       {/* Editorial Hero Banner */}
@@ -148,8 +154,15 @@ export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelect
             Click on any square button to explore curriculum subjects and tests for that standard.
           </p>
         </div>
-        <div className="text-xs font-bold uppercase tracking-wider text-[#9E8A79] bg-[#EFE7DB] px-3.5 py-1.5 rounded-lg border border-[#DDD1C0] self-start sm:self-auto">
-          7 Standards Available
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {isAdmin && (
+            <span className="text-[11px] font-bold text-[#D46244] bg-[#FBECE6] px-2.5 py-1 rounded-md border border-[#F5D5C6]">
+              Admin Preview
+            </span>
+          )}
+          <div className="text-xs font-bold uppercase tracking-wider text-[#9E8A79] bg-[#EFE7DB] px-3.5 py-1.5 rounded-lg border border-[#DDD1C0]">
+            7 Standards Available
+          </div>
         </div>
       </div>
 
@@ -157,6 +170,43 @@ export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelect
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
         {CLASSES_LIST.map((cls) => {
           const style = CLASS_3D_STYLES[cls.id];
+          const isEnabled = gradeStatus ? gradeStatus[cls.id] !== false : true;
+
+          // If disabled by Admin and user is student: greyed out and unclickable!
+          if (!isEnabled && !isAdmin) {
+            return (
+              <div
+                key={cls.id}
+                className="group relative aspect-square w-full rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex flex-col items-center justify-between text-center bg-[#E6DFD6] border-2 border-[#D5CABE] border-b-[6px] border-b-[#B8AB9C] opacity-55 grayscale cursor-not-allowed select-none shadow-none"
+                title={`Class ${cls.id} is currently disabled by administrator.`}
+                aria-disabled="true"
+              >
+                {/* Top Pill Subtitle */}
+                <div className="w-full py-1 px-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold tracking-tight uppercase bg-[#D0C5B7] text-[#695D4F] truncate flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3 text-[#695D4F]" />
+                  <span>Disabled</span>
+                </div>
+
+                {/* Center Greyed Numeral */}
+                <div className="my-auto flex flex-col items-center justify-center">
+                  <span className="font-heading font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#8A7D71] leading-none">
+                    {cls.id}
+                  </span>
+                  <span className="font-heading font-extrabold text-sm sm:text-base tracking-tight mt-1 text-[#8A7D71]">
+                    {cls.name}
+                  </span>
+                </div>
+
+                {/* Bottom Disabled Indicator */}
+                <div className="w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold text-[#8A7D71]">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Offline</span>
+                </div>
+              </div>
+            );
+          }
+
+          // Enabled button OR Admin preview
           return (
             <button
               key={cls.id}
@@ -169,6 +219,7 @@ export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelect
                 transition-all duration-150 ease-out cursor-pointer
                 hover:-translate-y-1.5 active:translate-y-1 active:border-b-2
                 focus:outline-none ${style.ringColor} focus-visible:ring-4
+                ${!isEnabled && isAdmin ? 'ring-2 ring-amber-500/50' : ''}
               `}
               aria-label={`Select ${cls.name}`}
             >
@@ -176,10 +227,10 @@ export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelect
               <div
                 className={`
                   w-full py-1 px-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold tracking-tight uppercase
-                  ${style.tagBg} ${style.tagColor} truncate transition-transform duration-150 group-hover:scale-105
+                  ${!isEnabled && isAdmin ? 'bg-amber-100 text-amber-900 border border-amber-300' : `${style.tagBg} ${style.tagColor}`} truncate transition-transform duration-150 group-hover:scale-105
                 `}
               >
-                {cls.badge}
+                {!isEnabled && isAdmin ? 'Disabled (Admin)' : cls.badge}
               </div>
 
               {/* Center 3D Tactile Numeral */}

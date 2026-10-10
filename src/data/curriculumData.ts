@@ -1,4 +1,4 @@
-import { ClassData, Subject, ChapterTopic, UserProfile } from '../types';
+import { ClassData, Subject, ChapterTopic, UserProfile, GradeStatusMap } from '../types';
 import { ALL_12_TENSES } from './tensesData';
 
 // Standard NCERT English Grammar chapter modules strictly as specified in prompt
@@ -573,6 +573,8 @@ const createEnglishGrammarSubject = (classId: string): Subject => ({
 export const INITIAL_USER_PROFILE: UserProfile = {
   id: 'usr_882041',
   name: 'Aarav Sharma',
+  role: 'student',
+  username: 'aarav_sharma',
   mobile: '9876543210',
   email: 'aarav.sharma@examworld.site',
   currentClass: '10',
@@ -646,6 +648,40 @@ export const INITIAL_USER_PROFILE: UserProfile = {
     },
   ],
 };
+
+export const INITIAL_ADMIN_PROFILE: UserProfile = {
+  id: 'adm_master_001',
+  name: 'Chief Administrator',
+  role: 'admin',
+  username: 'abt1996',
+  mobile: '9812345678',
+  email: 'admin@examworld.site',
+  currentClass: '10',
+  avatarColor: 'bg-gradient-to-br from-[#0F172A] to-[#334155]',
+  joinedDate: 'System Admin',
+  testHistory: [],
+};
+
+export const DEFAULT_GRADE_STATUS: GradeStatusMap = {
+  '6': true,
+  '7': true,
+  '8': true,
+  '9': true,
+  '10': true,
+  '11': true,
+  '12': true,
+};
+
+export const MOCK_ENROLLED_STUDENTS = [
+  { id: 'st-01', name: 'Aarav Sharma', mobile: '9876543210', className: '10', testsCompleted: 14, averageScore: 88.5, lastActive: '2 mins ago', status: 'active' },
+  { id: 'st-02', name: 'Ananya Verma', mobile: '9811223344', className: '12', testsCompleted: 22, averageScore: 94.2, lastActive: '12 mins ago', status: 'active' },
+  { id: 'st-03', name: 'Rohan Gupta', mobile: '9822334455', className: '10', testsCompleted: 9, averageScore: 76.0, lastActive: '1 hour ago', status: 'active' },
+  { id: 'st-04', name: 'Ishita Patel', mobile: '9833445566', className: '9', testsCompleted: 11, averageScore: 83.4, lastActive: '3 hours ago', status: 'active' },
+  { id: 'st-05', name: 'Devendra Singh', mobile: '9844556677', className: '11', testsCompleted: 17, averageScore: 91.0, lastActive: 'Yesterday', status: 'active' },
+  { id: 'st-06', name: 'Priya Nambiar', mobile: '9855667788', className: '8', testsCompleted: 8, averageScore: 79.5, lastActive: '2 days ago', status: 'active' },
+  { id: 'st-07', name: 'Kabir Mukherjee', mobile: '9866778899', className: '7', testsCompleted: 6, averageScore: 85.0, lastActive: '3 days ago', status: 'inactive' },
+  { id: 'st-08', name: 'Tanvi Joshi', mobile: '9877889900', className: '6', testsCompleted: 5, averageScore: 90.2, lastActive: 'Today', status: 'active' },
+];
 
 // Subjects map ensuring EVERY single class includes English Grammar as a distinct subject
 export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {

@@ -98,9 +98,13 @@ export interface UserTestRecord {
   timeSpentMinutes: number;
 }
 
+export type UserRole = 'student' | 'admin';
+
 export interface UserProfile {
   id: string;
   name: string;
+  role: UserRole;
+  username?: string;
   mobile: string;
   email: string;
   currentClass: ClassLevel;
@@ -108,3 +112,17 @@ export interface UserProfile {
   joinedDate: string;
   testHistory: UserTestRecord[];
 }
+
+export type GradeStatusMap = Record<ClassLevel, boolean>;
+
+export interface StudentEnrollmentRecord {
+  id: string;
+  name: string;
+  mobile: string;
+  className: ClassLevel;
+  testsCompleted: number;
+  averageScore: number;
+  lastActive: string;
+  status: 'active' | 'inactive';
+}
+
