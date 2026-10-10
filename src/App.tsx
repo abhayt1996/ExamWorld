@@ -448,51 +448,78 @@ export default function App() {
     });
   };
 
-  // Add Test dynamically into selected topic inside curriculum store
-  const handleAddTest = (
+  // Add Test dynamically into selected topic and send to Python Backend
+  const handleAddTest = async (
     classId: ClassLevel,
     subjectId: string,
     topicId: string,
     newTest: TopicTest
   ) => {
-    setCurriculumStore((prev) => {
-      const classSubjects = prev[classId] || [];
-      const updated = classSubjects.map((sub) => {
-        if (sub.id === subjectId) {
-          return {
-            ...sub,
-            topics: sub.topics.map((t) => {
-              if (t.id === topicId) {
-                return {
-                  ...t,
-                  tests: [...t.tests, newTest],
-                };
-              }
-              return t;
-            }),
-          };
-        }
-        return sub;
+    try {
+      // 1. Send the data to the Python FastAPI backend
+      const response = await fetch('http://localhost:8000/api/admin/tests/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: newTest.id,
+          topic_id: topicId,
+          title: newTest.title,
+          durationMinutes: newTest.durationMinutes,
+          marks: newTest.marks,
+          questions: newTest.questions.map(q => ({
+            question: q.question,
+            options: q.options,
+            correctIndex: q.correctIndex,
+            explanation: q.explanation,
+            imageUrl: q.imageUrl || null
+          }))
+        }),
       });
 
-      // Real-time synchronization if this subject is currently active for students
-      if (selectedSubject && selectedSubject.id === subjectId) {
-        setSelectedSubject((s) => {
-          if (!s) return null;
-          return {
-            ...s,
-            topics: s.topics.map((t) =>
-              t.id === topicId ? { ...t, tests: [...t.tests, newTest] } : t
-            ),
-          };
-        });
+      if (!response.ok) {
+        throw new Error('Failed to save test to database');
       }
 
-      return {
-        ...prev,
-        [classId]: updated,
-      };
-    });
+      // 2. If successful, update the React UI so the new test appears immediately
+      setCurriculumStore((prev) => {
+        const classSubjects = prev[classId] || [];
+        const updated = classSubjects.map((sub) => {
+          if (sub.id === subjectId) {
+            return {
+              ...sub,
+              topics: sub.topics.map((t) => {
+                if (t.id === topicId) {
+                  return { ...t, tests: [...t.tests, newTest] };
+                }
+                return t;
+              }),
+            };
+          }
+          return sub;
+        });
+
+        if (selectedSubject && selectedSubject.id === subjectId) {
+          setSelectedSubject((s) => {
+            if (!s) return null;
+            return {
+              ...s,
+              topics: s.topics.map((t) =>
+                t.id === topicId ? { ...t, tests: [...t.tests, newTest] } : t
+              ),
+            };
+          });
+        }
+        return { ...prev, [classId]: updated };
+      });
+      
+      console.log("Test successfully saved to MySQL via Python!");
+
+    } catch (error) {
+      console.error("Error saving test:", error);
+      alert("Failed to save test to the database. Is the Python server running?");
+    }
   };
 
   // Delete Test dynamically from selected topic inside curriculum store
