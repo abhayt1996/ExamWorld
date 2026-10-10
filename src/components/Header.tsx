@@ -13,6 +13,7 @@ import { UserProfile } from '../types';
 
 interface HeaderProps {
   onGoHome: () => void;
+  onScrollToGrades: () => void;
   activeView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard';
   selectedClassName?: string;
   selectedSubjectName?: string;
@@ -26,6 +27,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onGoHome,
+  onScrollToGrades,
   activeView,
   selectedClassName,
   selectedSubjectName,
@@ -112,11 +114,12 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-3">
             {/* Quick Class Selection Action */}
             <button
-              onClick={onGoHome}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#4A3B32] bg-[#EFE6DA] border border-[#DDD0BF] hover:bg-[#E6DBCC] active:bg-[#DECFC0] transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+              onClick={onScrollToGrades}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#4A3B32] bg-[#EFE6DA] border border-[#DDD0BF] hover:bg-[#E6DBCC] active:bg-[#DECFC0] transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+              title="Scroll directly to Grades 6-12 selection"
             >
               <Layers className="w-3.5 h-3.5 text-[#D46244]" />
-              <span>Grades 6–12</span>
+              <span>Grades 6-12</span>
             </button>
 
             {/* User Profile System: Logged Out vs Logged In */}

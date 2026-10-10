@@ -35,6 +35,42 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(test.durationMinutes * 60);
 
+  // References for scrolling back up to top of question container
+  const questionContainerRef = React.useRef<HTMLDivElement>(null);
+  const modalBodyRef = React.useRef<HTMLDivElement>(null);
+
+  // Smooth scroll helper ensuring the new question is perfectly in view
+  const scrollToQuestionTop = () => {
+    // Schedule on next frame for reliable DOM transition
+    setTimeout(() => {
+      if (modalBodyRef.current) {
+        modalBodyRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (questionContainerRef.current) {
+        questionContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 40);
+  };
+
+  const handleNextQuestion = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      scrollToQuestionTop();
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+      scrollToQuestionTop();
+    }
+  };
+
+  const handleJumpToQuestion = (index: number) => {
+    setCurrentIndex(index);
+    scrollToQuestionTop();
+  };
+
   // Live countdown timer
   useEffect(() => {
     if (isSubmitted) return;
@@ -163,13 +199,13 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7">
+        {/* Modal Body with auto-scroll target */}
+        <div ref={modalBodyRef} className="flex-1 overflow-y-auto p-5 sm:p-7 scroll-smooth">
           {!isSubmitted ? (
             /* Active Test Interface */
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Question & Options Area (3 Columns) */}
-              <div className="lg:col-span-3 flex flex-col justify-between">
+              {/* Question & Options Area (3 Columns) with question container ref for auto-scrolling */}
+              <div ref={questionContainerRef} className="lg:col-span-3 flex flex-col justify-between scroll-mt-4">
                 <div>
                   {/* Question Index Progress */}
                   <div className="flex items-center justify-between text-xs font-bold text-[#7E6C5D] mb-4">
@@ -233,7 +269,7 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                 <div className="pt-4 border-t border-[#E8DFC8] flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                      onClick={handlePrevQuestion}
                       disabled={currentIndex === 0}
                       className="px-3.5 py-2 rounded-xl border border-[#DDD0BF] bg-white text-xs font-bold text-[#564436] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF4ED] cursor-pointer flex items-center gap-1.5"
                     >
@@ -256,8 +292,8 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                   <div className="flex items-center gap-2">
                     {currentIndex < totalQuestions - 1 ? (
                       <button
-                        onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
-                        className="px-4 py-2 rounded-xl bg-[#4A3728] hover:bg-[#3D2C1E] text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-xs"
+                        onClick={handleNextQuestion}
+                        className="px-4 py-2 rounded-xl bg-[#4A3728] hover:bg-[#3D2C1E] text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-xs transition-transform active:scale-95"
                       >
                         <span>Next Question</span>
                         <ChevronRight className="w-4 h-4" />
@@ -290,7 +326,7 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                     return (
                       <button
                         key={idx}
-                        onClick={() => setCurrentIndex(idx)}
+                        onClick={() => handleJumpToQuestion(idx)}
                         className={`
                           h-10 rounded-xl font-bold text-xs flex items-center justify-center transition-all cursor-pointer relative
                           ${

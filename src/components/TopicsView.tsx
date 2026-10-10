@@ -10,8 +10,11 @@ import {
   HelpCircle,
   Zap,
   Lock,
+  Layers,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
-import { Subject, ChapterTopic, TopicTest } from '../types';
+import { Subject, ChapterTopic, TopicTest, NestedSubTopic } from '../types';
 
 interface TopicsViewProps {
   className: string;
@@ -30,10 +33,16 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
   onStartTest,
   onRequestLoginForTest,
 }) => {
-  // Store expanded chapter IDs in state. Default expand chapter 1 for immediate demonstrability!
+  // Store expanded main chapter IDs. Default expand chapter 1 or chapter 2 for immediate demonstrability!
   const [expandedTopicIds, setExpandedTopicIds] = useState<string[]>(() => {
     return subject.topics.length > 0 ? [subject.topics[0].id] : [];
   });
+
+  // Store expanded nested sub-topics (e.g. specific tense ID within Tenses chapter)
+  const [expandedSubTopicIds, setExpandedSubTopicIds] = useState<string[]>(['tense-1-sim-pres']);
+
+  // Tense category filter for Tenses topic
+  const [tenseFilter, setTenseFilter] = useState<'All' | 'Present' | 'Past' | 'Future'>('All');
 
   const toggleAccordion = (topicId: string) => {
     setExpandedTopicIds((prev) =>
@@ -41,12 +50,27 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
     );
   };
 
+  const toggleSubAccordion = (subTopicId: string) => {
+    setExpandedSubTopicIds((prev) =>
+      prev.includes(subTopicId) ? prev.filter((id) => id !== subTopicId) : [...prev, subTopicId]
+    );
+  };
+
   const expandAll = () => {
     setExpandedTopicIds(subject.topics.map((t) => t.id));
+    // Also expand subtopics if present
+    const allSubs: string[] = [];
+    subject.topics.forEach((t) => {
+      if (t.subTopics) {
+        t.subTopics.forEach((st) => allSubs.push(st.id));
+      }
+    });
+    setExpandedSubTopicIds(allSubs);
   };
 
   const collapseAll = () => {
     setExpandedTopicIds([]);
+    setExpandedSubTopicIds([]);
   };
 
   const handleTestClick = (topic: ChapterTopic, test: TopicTest) => {
@@ -112,7 +136,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
             </h1>
             <p className="text-xs sm:text-sm text-[#705E4F] mt-1.5 font-medium max-w-2xl">
               {isEnglishGrammar
-                ? 'Comprehensive NCERT English Grammar concepts across all chapters: Parts of Speech, Tenses, Voice, Speech, Modals, Determiners, Clauses & Concord.'
+                ? 'Standard NCERT English Grammar concepts. Explore Parts of Speech, the 12 Tenses (Present, Past, Future), Voice, Speech, Modals, Determiners, Clauses & Concord.'
                 : 'Click any full-width chapter bar below to expand diagnostic assessments, chapter quizzes, and comprehensive mock tests.'}
             </p>
           </div>
@@ -122,14 +146,14 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
               <span className="block text-xl font-heading font-black text-[#2F241C]">
                 {subject.topics.length}
               </span>
-              <span className="text-[11px] font-semibold text-[#8C7A6B]">Chapters</span>
+              <span className="text-[11px] font-semibold text-[#8C7A6B]">Topics</span>
             </div>
             <div className="w-[1px] h-8 bg-[#E3D6C5]" />
             <div className="text-center px-2">
               <span className="block text-xl font-heading font-black text-[#D46244]">
-                {subject.topics.reduce((acc, t) => acc + t.tests.length, 0)}
+                {isEnglishGrammar ? '24+ Tests' : `${subject.topics.reduce((acc, t) => acc + t.tests.length, 0)} Tests`}
               </span>
-              <span className="text-[11px] font-semibold text-[#8C7A6B]">Tests Available</span>
+              <span className="text-[11px] font-semibold text-[#8C7A6B]">Available</span>
             </div>
           </div>
         </div>
@@ -139,6 +163,14 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
       <div className="space-y-4 w-full">
         {subject.topics.map((topic) => {
           const isExpanded = expandedTopicIds.includes(topic.id);
+          const hasSubTopics = topic.subTopics && topic.subTopics.length > 0;
+
+          // Filter subtopics if category filter is active
+          const filteredSubTopics = hasSubTopics
+            ? topic.subTopics!.filter((st) =>
+                tenseFilter === 'All' ? true : st.tenseCategory === tenseFilter
+              )
+            : [];
 
           return (
             <div
@@ -152,7 +184,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                 }
               `}
             >
-              {/* Full-Width Clickable Accordion Bar (Warm Beige/Brown Aesthetic from Screenshot 662) */}
+              {/* Full-Width Clickable Accordion Bar (Warm Beige/Brown Aesthetic) */}
               <button
                 onClick={() => toggleAccordion(topic.id)}
                 className={`
@@ -174,8 +206,13 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                   </span>
 
                   <div className="min-w-0">
-                    <h2 className="font-heading font-bold text-base sm:text-lg text-[#2F241C] tracking-tight truncate">
-                      {topic.title}
+                    <h2 className="font-heading font-bold text-base sm:text-lg text-[#2F241C] tracking-tight truncate flex items-center gap-2">
+                      <span>{topic.title}</span>
+                      {hasSubTopics && (
+                        <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md bg-[#D46244] text-white">
+                          All 12 Tenses
+                        </span>
+                      )}
                     </h2>
                     <p className="text-xs text-[#7A6858] font-medium hidden sm:block truncate mt-0.5">
                       {topic.summary}
@@ -187,7 +224,9 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/80 text-[#543F30] text-xs font-bold border border-[#DDD0BF]">
                     <Zap className="w-3.5 h-3.5 text-[#D46244]" />
-                    <span>{topic.tests.length} Tests Ready</span>
+                    <span>
+                      {hasSubTopics ? '24 Tense Tests (2 per Tense)' : `${topic.tests.length} Tests Ready`}
+                    </span>
                   </span>
 
                   <div
@@ -209,7 +248,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                 </div>
               </button>
 
-              {/* Accordion Expanded Content (Dropdown Area with Tests) */}
+              {/* Accordion Expanded Content */}
               {isExpanded && (
                 <div className="px-5 sm:px-7 py-6 border-t border-[#DFD1BF] bg-[#FDFBF7]">
                   {/* Summary & Key Concepts Sub-section */}
@@ -238,94 +277,280 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Section Title: Available Interactive Tests */}
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-sm font-heading font-extrabold text-[#32261E] tracking-tight uppercase">
-                      Available Practice Tests & Mock Exams ({topic.tests.length})
-                    </h3>
-                    <span className="text-xs font-medium text-[#8C7A6B]">
-                      Timed assessments with instant explanations
-                    </span>
-                  </div>
-
-                  {/* List of Clickable Tests */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    {topic.tests.map((test) => (
-                      <div
-                        key={test.id}
-                        className="p-4 rounded-2xl bg-white border border-[#E4D8C8] shadow-xs hover:border-[#D46244]/50 hover:shadow-md transition-all duration-200 flex flex-col justify-between"
-                      >
+                  {/* SPECIAL NESTED DROPDOWN FOR TENSES: ALL 12 TENSES ACROSS PRESENT, PAST, FUTURE */}
+                  {hasSubTopics ? (
+                    <div className="space-y-6">
+                      {/* Tenses Banner and Category Filter */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8DFC8] pb-4">
                         <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#F3ECE1] text-[#694F3B] border border-[#E2D5C3]">
-                              {test.badge}
-                            </span>
-                            <span
-                              className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                                test.difficulty === 'Easy'
-                                  ? 'bg-[#E8F5E9] text-[#2E7D32]'
-                                  : test.difficulty === 'Medium'
-                                  ? 'bg-[#FFF8E1] text-[#F57F17]'
-                                  : 'bg-[#FFEBEE] text-[#C62828]'
+                          <h3 className="text-base font-heading font-extrabold text-[#2F241C] flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-[#D46244]" />
+                            <span>Nested Tenses Curriculum: All 12 Tenses (Present, Past & Future)</span>
+                          </h3>
+                          <p className="text-xs text-[#7A6858] font-medium mt-0.5">
+                            Click any of the 12 tenses below to access exactly 2 comprehensive tests (10 Questions each: Error Detection & Fill-in-the-Blanks).
+                          </p>
+                        </div>
+
+                        {/* Category Filter Pills */}
+                        <div className="flex items-center gap-1.5 p-1 bg-[#EFE5D8] rounded-xl border border-[#DFD3C2] self-start sm:self-auto">
+                          {(['All', 'Present', 'Past', 'Future'] as const).map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => setTenseFilter(cat)}
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                tenseFilter === cat
+                                  ? 'bg-white text-[#2F241C] shadow-xs'
+                                  : 'text-[#6C5747] hover:text-[#2F241C]'
                               }`}
                             >
-                              {test.difficulty}
-                            </span>
-                          </div>
-
-                          <h4 className="font-heading font-bold text-base text-[#2E231C]">
-                            {test.title}
-                          </h4>
-
-                          <div className="mt-2.5 flex items-center gap-4 text-xs text-[#7B6A5C] font-semibold">
-                            <div className="flex items-center gap-1.5">
-                              <HelpCircle className="w-3.5 h-3.5 text-[#A08E7F]" />
-                              <span>{test.questionsCount} MCQs</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-[#A08E7F]" />
-                              <span>{test.durationMinutes} Mins</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Award className="w-3.5 h-3.5 text-[#A08E7F]" />
-                              <span>{test.marks} Marks</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Interactive Start Test Button (with Auth gate check) */}
-                        <div className="mt-4 pt-3 border-t border-[#F1E9DE] flex items-center justify-between">
-                          <span className="text-[11px] text-[#8C7A6B] font-medium">
-                            Immediate Score & Solution
-                          </span>
-
-                          <button
-                            onClick={() => handleTestClick(topic, test)}
-                            className={`
-                              inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm
-                              ${
-                                isLoggedIn
-                                  ? 'bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white'
-                                  : 'bg-[#4A3728] hover:bg-[#3D2C1E] active:bg-[#322317] text-white'
-                              }
-                            `}
-                          >
-                            {isLoggedIn ? (
-                              <>
-                                <Play className="w-3.5 h-3.5 fill-white" />
-                                <span>Start Test</span>
-                              </>
-                            ) : (
-                              <>
-                                <Lock className="w-3.5 h-3.5" />
-                                <span>Login to Start</span>
-                              </>
-                            )}
-                          </button>
+                              {cat} {cat === 'All' ? '(12)' : '(4)'}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Stacked Nested Accordions for all 12 Tenses */}
+                      <div className="space-y-3.5">
+                        {filteredSubTopics.map((subTopic: NestedSubTopic) => {
+                          const isSubExpanded = expandedSubTopicIds.includes(subTopic.id);
+
+                          return (
+                            <div
+                              key={subTopic.id}
+                              className={`
+                                rounded-xl border transition-all duration-150 overflow-hidden
+                                ${
+                                  isSubExpanded
+                                    ? 'border-[#D46244]/40 bg-[#FAF7F2] shadow-xs'
+                                    : 'border-[#E2D5C4] bg-white hover:border-[#D5C5B0]'
+                                }
+                              `}
+                            >
+                              {/* Clickable Sub-Topic Bar */}
+                              <button
+                                onClick={() => toggleSubAccordion(subTopic.id)}
+                                className={`
+                                  w-full px-4 sm:px-5 py-3.5 text-left cursor-pointer flex items-center justify-between gap-3
+                                  ${isSubExpanded ? 'bg-[#F6EFE6]' : 'hover:bg-[#FAF6F0]'}
+                                `}
+                                aria-expanded={isSubExpanded}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <span
+                                    className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                                      subTopic.tenseCategory === 'Present'
+                                        ? 'bg-[#E0F2FE] text-[#0369A1]'
+                                        : subTopic.tenseCategory === 'Past'
+                                        ? 'bg-[#FEF3C7] text-[#92400E]'
+                                        : 'bg-[#F3E8FF] text-[#6B21A8]'
+                                    }`}
+                                  >
+                                    {subTopic.tenseCategory}
+                                  </span>
+
+                                  <div className="min-w-0">
+                                    <h4 className="font-heading font-extrabold text-sm sm:text-base text-[#2F241C] truncate">
+                                      {subTopic.name}
+                                    </h4>
+                                    <p className="text-[11px] font-mono font-semibold text-[#8C7A6B] truncate">
+                                      {subTopic.formula}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2.5 shrink-0">
+                                  <span className="text-[11px] font-bold text-[#564335] bg-white px-2 py-0.5 rounded border border-[#E3D6C5] hidden sm:inline-block">
+                                    2 Tests Available
+                                  </span>
+                                  <div className="w-7 h-7 rounded-lg bg-black/5 flex items-center justify-center text-[#4A3728]">
+                                    {isSubExpanded ? (
+                                      <ChevronUp className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+
+                              {/* Nested Sub-Topic Tests Area (revealing exactly 2 tests) */}
+                              {isSubExpanded && (
+                                <div className="p-4 sm:p-5 border-t border-[#E8DFC8] bg-white space-y-4 animate-in fade-in duration-150">
+                                  <div className="p-3 rounded-lg bg-[#FAF5EE] border border-[#EBDDCF] text-xs text-[#523E30] flex items-center justify-between">
+                                    <span>
+                                      <strong>Rule / Structure:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded text-[#D46244] font-bold">{subTopic.formula}</code>
+                                    </span>
+                                    <span className="text-[#8C7A6B] hidden md:inline">
+                                      {subTopic.summary}
+                                    </span>
+                                  </div>
+
+                                  {/* The Exactly 2 Clickable Tests for each Tense */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                    {subTopic.tests.map((test) => (
+                                      <div
+                                        key={test.id}
+                                        className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E4D8C8] shadow-2xs hover:border-[#D46244]/50 hover:shadow-xs transition-all flex flex-col justify-between"
+                                      >
+                                        <div>
+                                          <div className="flex items-center justify-between gap-2 mb-2">
+                                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EFE5D8] text-[#5C4535]">
+                                              {test.badge}
+                                            </span>
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#E8F5E9] text-[#2E7D32]">
+                                              10 Questions
+                                            </span>
+                                          </div>
+
+                                          <h5 className="font-heading font-bold text-sm sm:text-base text-[#2E231C]">
+                                            {test.title}
+                                          </h5>
+
+                                          <div className="mt-2 flex items-center gap-3 text-xs text-[#7B6A5C] font-semibold">
+                                            <div className="flex items-center gap-1">
+                                              <HelpCircle className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                              <span>{test.questionsCount} MCQs</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <Clock className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                              <span>{test.durationMinutes} Mins</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <Award className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                              <span>{test.marks} Marks</span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="mt-4 pt-3 border-t border-[#EDE3D6] flex items-center justify-between">
+                                          <span className="text-[11px] text-[#8C7A6B] font-medium">
+                                            Auto-Scroll Question UI
+                                          </span>
+
+                                          <button
+                                            onClick={() => handleTestClick(topic, test)}
+                                            className={`
+                                              inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer shadow-xs hover:shadow-sm
+                                              ${
+                                                isLoggedIn
+                                                  ? 'bg-[#D46244] hover:bg-[#C25538] text-white'
+                                                  : 'bg-[#4A3728] hover:bg-[#3D2C1E] text-white'
+                                              }
+                                            `}
+                                          >
+                                            {isLoggedIn ? (
+                                              <>
+                                                <Play className="w-3 h-3 fill-white" />
+                                                <span>Start Test</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Lock className="w-3 h-3" />
+                                                <span>Login to Start</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Standard Non-Tenses Chapter Tests List */
+                    <div>
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-sm font-heading font-extrabold text-[#32261E] tracking-tight uppercase">
+                          Available Chapter Tests & Quizzes ({topic.tests.length})
+                        </h3>
+                        <span className="text-xs font-medium text-[#8C7A6B]">
+                          Timed assessments with instant explanations
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {topic.tests.map((test) => (
+                          <div
+                            key={test.id}
+                            className="p-4 rounded-2xl bg-white border border-[#E4D8C8] shadow-xs hover:border-[#D46244]/50 hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#F3ECE1] text-[#694F3B] border border-[#E2D5C3]">
+                                  {test.badge}
+                                </span>
+                                <span
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                                    test.difficulty === 'Easy'
+                                      ? 'bg-[#E8F5E9] text-[#2E7D32]'
+                                      : test.difficulty === 'Medium'
+                                      ? 'bg-[#FFF8E1] text-[#F57F17]'
+                                      : 'bg-[#FFEBEE] text-[#C62828]'
+                                  }`}
+                                >
+                                  {test.difficulty}
+                                </span>
+                              </div>
+
+                              <h4 className="font-heading font-bold text-base text-[#2E231C]">
+                                {test.title}
+                              </h4>
+
+                              <div className="mt-2.5 flex items-center gap-4 text-xs text-[#7B6A5C] font-semibold">
+                                <div className="flex items-center gap-1.5">
+                                  <HelpCircle className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                  <span>{test.questionsCount} MCQs</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                  <span>{test.durationMinutes} Mins</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Award className="w-3.5 h-3.5 text-[#A08E7F]" />
+                                  <span>{test.marks} Marks</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-[#F1E9DE] flex items-center justify-between">
+                              <span className="text-[11px] text-[#8C7A6B] font-medium">
+                                Immediate Score & Solution
+                              </span>
+
+                              <button
+                                onClick={() => handleTestClick(topic, test)}
+                                className={`
+                                  inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm
+                                  ${
+                                    isLoggedIn
+                                      ? 'bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white'
+                                      : 'bg-[#4A3728] hover:bg-[#3D2C1E] active:bg-[#322317] text-white'
+                                  }
+                                `}
+                              >
+                                {isLoggedIn ? (
+                                  <>
+                                    <Play className="w-3.5 h-3.5 fill-white" />
+                                    <span>Start Test</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>Login to Start</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -139,7 +139,7 @@ export const ClassSelectionView: React.FC<ClassSelectionViewProps> = ({ onSelect
       </div>
 
       {/* View 1: Section Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+      <div id="class-selection-grid" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[#2D231B] tracking-tight">
             Select Your Grade

@@ -1,4 +1,5 @@
 import { ClassData, Subject, ChapterTopic, UserProfile } from '../types';
+import { ALL_12_TENSES } from './tensesData';
 
 // Standard NCERT English Grammar chapter modules strictly as specified in prompt
 const NCERT_ENGLISH_GRAMMAR_TOPICS: ChapterTopic[] = [
@@ -131,7 +132,8 @@ const NCERT_ENGLISH_GRAMMAR_TOPICS: ChapterTopic[] = [
           }
         ]
       }
-    ]
+    ],
+    subTopics: ALL_12_TENSES,
   },
   {
     id: 'eg-ch3',

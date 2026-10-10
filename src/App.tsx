@@ -55,6 +55,24 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Scroll directly down to Class Selection Grid (Grades 6-12)
+  const handleScrollToGrades = () => {
+    if (activeView !== 'classes') {
+      setActiveView('classes');
+      setTimeout(() => {
+        const gridElem = document.getElementById('class-selection-grid');
+        if (gridElem) {
+          gridElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 120);
+    } else {
+      const gridElem = document.getElementById('class-selection-grid');
+      if (gridElem) {
+        gridElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
   // Navigate to Topics & Tests View
   const handleSelectSubject = (subject: Subject) => {
     setSelectedSubject(subject);
@@ -152,6 +170,7 @@ export default function App() {
       {/* Brand Header with User Profile system */}
       <Header
         onGoHome={handleBackToClasses}
+        onScrollToGrades={handleScrollToGrades}
         activeView={activeView}
         selectedClassName={selectedClassInfo?.name}
         selectedSubjectName={selectedSubject?.name}

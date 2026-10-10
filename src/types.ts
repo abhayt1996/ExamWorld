@@ -40,6 +40,15 @@ export interface TopicTest {
   questions: Question[];
 }
 
+export interface NestedSubTopic {
+  id: string;
+  name: string;
+  tenseCategory: 'Present' | 'Past' | 'Future';
+  formula: string;
+  summary: string;
+  tests: TopicTest[];
+}
+
 export interface ChapterTopic {
   id: string;
   chapterNumber: number;
@@ -47,6 +56,7 @@ export interface ChapterTopic {
   summary: string;
   keyConcepts: string[];
   tests: TopicTest[];
+  subTopics?: NestedSubTopic[];
 }
 
 export interface Subject {
