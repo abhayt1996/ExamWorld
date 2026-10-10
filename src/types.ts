@@ -96,6 +96,32 @@ export interface UserTestRecord {
   percentage: number;
   date: string;
   timeSpentMinutes: number;
+  totalTimeSpentSeconds?: number;
+  timeSpentPerQuestion?: number[];
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  className: ClassLevel;
+  totalScore: number;
+  totalTimeSpentSeconds: number;
+  testsCompleted: number;
+  avatarColor: string;
+  rank?: number;
+  isCurrentUser?: boolean;
+}
+
+export interface UserActivityLog {
+  id: string;
+  userName: string;
+  action: 'test_started' | 'test_completed' | 'logged_in' | 'viewing_chapter';
+  testName?: string;
+  className: ClassLevel;
+  timestamp: number;
+  activeNow: boolean;
+  score?: number;
+  timeSpentSeconds?: number;
 }
 
 export type UserRole = 'student' | 'admin';

@@ -8,13 +8,14 @@ import {
   LogOut,
   ChevronDown,
   ShieldCheck,
+  Trophy,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface HeaderProps {
   onGoHome: () => void;
   onScrollToGrades: () => void;
-  activeView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard';
+  activeView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard' | 'leaderboard';
   selectedClassName?: string;
   selectedSubjectName?: string;
   isLoggedIn: boolean;
@@ -22,6 +23,7 @@ interface HeaderProps {
   onOpenLoginModal: () => void;
   onOpenProfile: () => void;
   onOpenDashboard: () => void;
+  onOpenLeaderboard?: () => void;
   onLogout: () => void;
 }
 
@@ -36,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLoginModal,
   onOpenProfile,
   onOpenDashboard,
+  onOpenLeaderboard,
   onLogout,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -121,6 +124,18 @@ export const Header: React.FC<HeaderProps> = ({
               <Layers className="w-3.5 h-3.5 text-[#D46244]" />
               <span>Grades 6-12</span>
             </button>
+
+            {/* Quick Leaderboard Navigation Action */}
+            {onOpenLeaderboard && (
+              <button
+                onClick={onOpenLeaderboard}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+                title="Global Leaderboard"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden sm:inline">Leaderboard</span>
+              </button>
+            )}
 
             {/* User Profile System: Logged Out vs Logged In */}
             {!isLoggedIn ? (
@@ -214,6 +229,20 @@ export const Header: React.FC<HeaderProps> = ({
                         <LayoutDashboard className="w-4 h-4 text-[#D46244]" />
                         <span>{user?.role === 'admin' ? 'Admin Dashboard (Grade Control & Telemetry)' : 'Dashboard & Progress Graphs'}</span>
                       </button>
+
+                      {/* Option 3: Global Leaderboard */}
+                      {onOpenLeaderboard && (
+                        <button
+                          onClick={() => {
+                            setIsDropdownOpen(false);
+                            onOpenLeaderboard();
+                          }}
+                          className="w-full px-4 py-2.5 text-left hover:bg-[#FAF4ED] flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <Trophy className="w-4 h-4 text-amber-600" />
+                          <span>Global Student Leaderboard</span>
+                        </button>
+                      )}
 
                       <div className="my-1 border-t border-[#F2EAE0]" />
 

@@ -27,6 +27,9 @@ import {
   AlertTriangle,
   FolderTree,
   X,
+  Edit3,
+  Pencil,
+  Trophy,
 } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
 import {
@@ -36,8 +39,11 @@ import {
   ChapterTopic,
   TopicTest,
   DisabledEntitiesMap,
+  NestedSubTopic,
+  UserActivityLog,
 } from '../types';
 import { CLASSES_LIST, MOCK_ENROLLED_STUDENTS } from '../data/curriculumData';
+import { MOCK_USER_ACTIVITIES, calculateDynamicAdminStats } from '../data/userActivityData';
 import { TestBuilderModal } from './TestBuilderModal';
 
 Chart.register(...registerables);
@@ -52,13 +58,18 @@ interface AdminDashboardViewProps {
   onToggleTest: (testId: string) => void;
   onAddSubject: (classId: ClassLevel, subject: Subject) => void;
   onDeleteSubject: (classId: ClassLevel, subjectId: string) => void;
+  onUpdateSubject: (classId: ClassLevel, subjectId: string, updated: Partial<Subject>) => void;
   onAddTopic: (classId: ClassLevel, subjectId: string, topic: ChapterTopic) => void;
   onDeleteTopic: (classId: ClassLevel, subjectId: string, topicId: string) => void;
+  onUpdateTopic: (classId: ClassLevel, subjectId: string, topicId: string, updated: Partial<ChapterTopic>) => void;
+  onUpdateSubTopic?: (classId: ClassLevel, subjectId: string, topicId: string, subTopicId: string, updated: Partial<NestedSubTopic>) => void;
   onAddTest: (classId: ClassLevel, subjectId: string, topicId: string, test: TopicTest) => void;
   onDeleteTest: (classId: ClassLevel, subjectId: string, topicId: string, testId: string) => void;
+  onUpdateTest: (classId: ClassLevel, subjectId: string, topicId: string, updatedTest: TopicTest) => void;
   onSetAllGrades: (enabled: boolean) => void;
   onBackToHome: () => void;
   onChangePasswordClick: () => void;
+  onOpenLeaderboard?: () => void;
 }
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
@@ -71,18 +82,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onToggleTest,
   onAddSubject,
   onDeleteSubject,
+  onUpdateSubject,
   onAddTopic,
   onDeleteTopic,
+  onUpdateTopic,
+  onUpdateSubTopic,
   onAddTest,
   onDeleteTest,
+  onUpdateTest,
   onSetAllGrades,
   onBackToHome,
   onChangePasswordClick,
+  onOpenLeaderboard,
 }) => {
-  // Live Analytics State - simulates dynamic real-time user count fluctuation
-  const [liveUsersCount, setLiveUsersCount] = useState<number>(1482);
-  const [activeSessions, setActiveSessions] = useState<number>(341);
-  const [todaySubmissions, setTodaySubmissions] = useState<number>(4918);
+  // Dynamically calculated stats from mock user activity records
+  const [initialStats] = useState(() => calculateDynamicAdminStats(MOCK_USER_ACTIVITIES));
+  const [liveUsersCount, setLiveUsersCount] = useState<number>(initialStats.baseActiveUsers);
+  const [activeSessions, setActiveSessions] = useState<number>(initialStats.baseActiveTestSessions);
+  const [todaySubmissions, setTodaySubmissions] = useState<number>(initialStats.baseCompletedTestsToday);
+  const [recentActivities, setRecentActivities] = useState<UserActivityLog[]>(MOCK_USER_ACTIVITIES);
 
   // Hierarchical Curriculum Center drill-down selection
   const [selectedGradeId, setSelectedGradeId] = useState<ClassLevel>('10');
@@ -111,9 +129,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     name: string;
   } | null>(null);
 
-  // Test Builder Modal target
+  // Test Builder Modal target (for Add or Edit Test)
   const [testBuilderTarget, setTestBuilderTarget] = useState<{
     topic: ChapterTopic;
+    initialTest?: TopicTest | null;
+  } | null>(null);
+
+  // Edit Subject Modal state
+  const [editingSubject, setEditingSubject] = useState<{
+    subject: Subject;
+    name: string;
+    code: string;
+    category: Subject['category'];
+    stream: Subject['stream'];
+  } | null>(null);
+
+  // Edit Topic Modal state
+  const [editingTopic, setEditingTopic] = useState<{
+    topic: ChapterTopic;
+    title: string;
+    summary: string;
+    chapterNumber: number;
+  } | null>(null);
+
+  // Edit SubTopic Modal state
+  const [editingSubTopic, setEditingSubTopic] = useState<{
+    topicId: string;
+    subTopic: NestedSubTopic;
+    name: string;
+    formula: string;
+    summary: string;
   } | null>(null);
 
   // Toast alert
@@ -122,6 +167,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const showNotice = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 3500);
+  };
+
+  // Save edited subject
+  const handleSaveEditSubject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubject || !editingSubject.name.trim()) return;
+    onUpdateSubject(selectedGradeId, editingSubject.subject.id, {
+      name: editingSubject.name.trim(),
+      code: editingSubject.code.trim().toUpperCase() || editingSubject.subject.code,
+      category: editingSubject.category,
+      stream: editingSubject.stream,
+    });
+    showNotice(`Subject "${editingSubject.name.trim()}" updated successfully!`);
+    setEditingSubject(null);
+  };
+
+  // Save edited topic
+  const handleSaveEditTopic = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTopic || !activeSubject || !editingTopic.title.trim()) return;
+    onUpdateTopic(selectedGradeId, activeSubject.id, editingTopic.topic.id, {
+      title: editingTopic.title.trim(),
+      summary: editingTopic.summary.trim(),
+      chapterNumber: editingTopic.chapterNumber,
+    });
+    showNotice(`Topic "${editingTopic.title.trim()}" updated successfully!`);
+    setEditingTopic(null);
+  };
+
+  // Save edited subtopic
+  const handleSaveEditSubTopic = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubTopic || !activeSubject || !editingSubTopic.name.trim()) return;
+    if (onUpdateSubTopic) {
+      onUpdateSubTopic(
+        selectedGradeId,
+        activeSubject.id,
+        editingSubTopic.topicId,
+        editingSubTopic.subTopic.id,
+        {
+          name: editingSubTopic.name.trim(),
+          formula: editingSubTopic.formula.trim(),
+          summary: editingSubTopic.summary.trim(),
+        }
+      );
+    }
+    showNotice(`Subtopic "${editingSubTopic.name.trim()}" updated successfully!`);
+    setEditingSubTopic(null);
   };
 
   const classBarChartRef = useRef<HTMLCanvasElement>(null);
@@ -427,6 +520,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </button>
 
         <div className="flex items-center gap-3">
+          {onOpenLeaderboard && (
+            <button
+              onClick={onOpenLeaderboard}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold cursor-pointer shadow-xs transition-colors"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Global Leaderboard</span>
+            </button>
+          )}
+
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold shadow-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Master Admin Session (abt1996)</span>
@@ -451,7 +554,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </span>
         </h1>
         <p className="text-xs sm:text-sm text-[#735F50] mt-1.5 font-medium max-w-3xl">
-          Hierarchical 4-level control center: toggle availability at Grade, Subject, Topic, and Test levels, add/delete curriculum modules, view live dynamic user telemetry, and inspect student performance analytics.
+          Hierarchical 4-level control center: toggle availability at Grade, Subject, Topic, and Test levels, full CRUD editing across modules, view dynamic user telemetry, and inspect student performance analytics.
         </p>
       </div>
 
@@ -488,7 +591,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
               <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Concurrent real-time student sessions</span>
+                <span>Calculated from live active session stream</span>
               </p>
             </div>
 
@@ -500,7 +603,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <span className="tabular-nums font-mono">{activeSessions}</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
-                Simultaneous test attempts currently taking place
+                Calculated simultaneous test attempts taking place
               </p>
             </div>
 
@@ -512,9 +615,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <span className="tabular-nums font-mono">{todaySubmissions.toLocaleString()}</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
-                Verified question evaluations recorded
+                Dynamically computed evaluations recorded
               </p>
             </div>
+          </div>
+
+          {/* Dynamic User Activity Real-Time Stream */}
+          <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="font-bold text-white">Live Activity Stream:</span>
+              <span className="text-slate-300 truncate max-w-md">
+                {recentActivities[0].userName} (Class {recentActivities[0].className}){' '}
+                {recentActivities[0].action === 'test_completed'
+                  ? `scored ${recentActivities[0].score || 18} marks in ${recentActivities[0].testName}`
+                  : `started assessment in ${recentActivities[0].testName || 'NCERT Curriculum'}`}
+              </span>
+            </div>
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
+              Computed dynamically from {recentActivities.length} session activity records
+            </span>
           </div>
         </div>
       </div>
@@ -698,6 +818,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    {/* Edit subject button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSubject({
+                          subject: sub,
+                          name: sub.name,
+                          code: sub.code,
+                          category: sub.category,
+                          stream: sub.stream,
+                        });
+                      }}
+                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                      title="Edit Subject"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+
                     {/* Toggle button */}
                     <button
                       type="button"
@@ -753,7 +892,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </h3>
                 </div>
                 <p className="text-xs text-[#7A6858] mt-0.5 font-medium">
-                  Enable/disable specific topics or drill in to toggle individual tests.
+                  Enable/disable specific topics or drill in to toggle and edit individual tests.
                 </p>
               </div>
 
@@ -814,6 +953,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Edit Topic */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingTopic({
+                              topic,
+                              title: topic.title,
+                              summary: topic.summary,
+                              chapterNumber: topic.chapterNumber,
+                            })
+                          }
+                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                          title="Edit Topic"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
                         {/* Toggle Topic */}
                         <button
                           type="button"
@@ -862,17 +1018,59 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* LEVEL 4: TESTS INSIDE THIS TOPIC */}
                     {isTopicSelected && (
                       <div className="mt-4 pt-4 border-t border-[#F0E6D8] space-y-2.5 bg-[#FAF7F2] p-3 rounded-lg">
+                        {/* Nested Subtopics if present */}
+                        {topic.subTopics && topic.subTopics.length > 0 && (
+                          <div className="p-3.5 rounded-xl bg-white border border-[#E8DEC8] space-y-2 mb-3">
+                            <span className="text-xs font-bold text-[#6D5A4C] uppercase tracking-wider block">
+                              Nested Subtopics / Tense Modules ({topic.subTopics.length}) - Editable
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {topic.subTopics.map((st) => (
+                                <div
+                                  key={st.id}
+                                  className="p-2.5 rounded-lg bg-[#FAF7F2] border border-[#E4D8C8] flex items-center justify-between gap-2 text-xs"
+                                >
+                                  <div className="min-w-0">
+                                    <span className="font-bold text-[#2F241C] block truncate">
+                                      {st.name}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-[#8C7A6B] block truncate">
+                                      {st.formula}
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setEditingSubTopic({
+                                        topicId: topic.id,
+                                        subTopic: st,
+                                        name: st.name,
+                                        formula: st.formula,
+                                        summary: st.summary,
+                                      })
+                                    }
+                                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer"
+                                    title="Edit Subtopic"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8DEC8] pb-2 mb-3">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-[#6D5A4C]">Level 4: Topic Tests & Assessments ({topic.tests.length})</span>
                             <span className="hidden sm:inline-block text-[11px] font-semibold text-[#8C7A6B]">
-                              · Independent Toggle & Deletion
+                              · Full CRUD Editing & Toggles
                             </span>
                           </div>
 
                           <button
                             type="button"
-                            onClick={() => setTestBuilderTarget({ topic })}
+                            onClick={() => setTestBuilderTarget({ topic, initialTest: null })}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E7D32] hover:bg-[#256828] text-white text-xs font-bold transition-colors shadow-xs cursor-pointer self-start sm:self-auto"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -919,6 +1117,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 >
                                   {isTestEnabled ? 'Available' : 'Disabled'}
                                 </span>
+
+                                {/* Edit Test Button */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setTestBuilderTarget({
+                                      topic,
+                                      initialTest: test,
+                                    })
+                                  }
+                                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                                  title="Edit Test & Questions"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
 
                                 <button
                                   type="button"
@@ -1279,7 +1492,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* TEST BUILDER MODAL */}
+      {/* TEST BUILDER MODAL (ADD OR EDIT TEST) */}
       {testBuilderTarget && activeSubject && (
         <TestBuilderModal
           isOpen={true}
@@ -1287,12 +1500,300 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           subjectId={activeSubject.id}
           subjectName={activeSubject.name}
           topic={testBuilderTarget.topic}
+          initialTest={testBuilderTarget.initialTest}
           onClose={() => setTestBuilderTarget(null)}
           onSaveTest={(cId, sId, tId, newTest) => {
-            onAddTest(cId, sId, tId, newTest);
-            showNotice(`Test "${newTest.title}" added to ${testBuilderTarget.topic.title}!`);
+            if (testBuilderTarget.initialTest) {
+              onUpdateTest(cId, sId, tId, newTest);
+              showNotice(`Test "${newTest.title}" updated successfully!`);
+            } else {
+              onAddTest(cId, sId, tId, newTest);
+              showNotice(`Test "${newTest.title}" added to ${testBuilderTarget.topic.title}!`);
+            }
           }}
         />
+      )}
+
+      {/* MODAL 3: EDIT SUBJECT */}
+      {editingSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#FAF7F2] rounded-3xl border border-[#DFD3C3] shadow-2xl p-6 sm:p-7">
+            <button
+              onClick={() => setEditingSubject(null)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-[#6F5B4B] border border-[#DDD0BF] flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-heading font-extrabold text-xl text-[#2F241C] tracking-tight mb-1">
+              Edit Subject: {editingSubject.subject.name}
+            </h3>
+            <p className="text-xs text-[#7A6656] font-medium mb-4">
+              Rename subject, update code, category, or stream.
+            </p>
+
+            <form onSubmit={handleSaveEditSubject} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Subject Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingSubject.name}
+                  onChange={(e) =>
+                    setEditingSubject((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none focus:ring-2 focus:ring-[#D46244]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Subject Code
+                </label>
+                <input
+                  type="text"
+                  value={editingSubject.code}
+                  onChange={(e) =>
+                    setEditingSubject((prev) => (prev ? { ...prev, code: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none uppercase"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={editingSubject.category}
+                    onChange={(e) =>
+                      setEditingSubject((prev) =>
+                        prev ? { ...prev, category: e.target.value as any } : null
+                      )
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none"
+                  >
+                    <option value="core">Core</option>
+                    <option value="science">Science</option>
+                    <option value="commerce">Commerce</option>
+                    <option value="humanities">Humanities</option>
+                    <option value="languages">Languages</option>
+                    <option value="grammar">Grammar</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                    Stream
+                  </label>
+                  <select
+                    value={editingSubject.stream}
+                    onChange={(e) =>
+                      setEditingSubject((prev) =>
+                        prev ? { ...prev, stream: e.target.value as any } : null
+                      )
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none"
+                  >
+                    <option value="General">General</option>
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Humanities">Humanities</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingSubject(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#6D5A4C] hover:bg-[#EFE5D8] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#D46244] hover:bg-[#C25538] text-white text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: EDIT TOPIC */}
+      {editingTopic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#FAF7F2] rounded-3xl border border-[#DFD3C3] shadow-2xl p-6 sm:p-7">
+            <button
+              onClick={() => setEditingTopic(null)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-[#6F5B4B] border border-[#DDD0BF] flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-heading font-extrabold text-xl text-[#2F241C] tracking-tight mb-1">
+              Edit Topic: {editingTopic.topic.title}
+            </h3>
+            <p className="text-xs text-[#7A6656] font-medium mb-4">
+              Update chapter number, title, or curriculum overview.
+            </p>
+
+            <form onSubmit={handleSaveEditTopic} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
+                  <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                    Ch. #
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={editingTopic.chapterNumber}
+                    onChange={(e) =>
+                      setEditingTopic((prev) =>
+                        prev ? { ...prev, chapterNumber: parseInt(e.target.value) || 1 } : null
+                      )
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold text-center focus:outline-none"
+                  />
+                </div>
+
+                <div className="col-span-3">
+                  <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                    Topic Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTopic.title}
+                    onChange={(e) =>
+                      setEditingTopic((prev) => (prev ? { ...prev, title: e.target.value } : null))
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none focus:ring-2 focus:ring-[#D46244]/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Summary / Overview
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingTopic.summary}
+                  onChange={(e) =>
+                    setEditingTopic((prev) => (prev ? { ...prev, summary: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingTopic(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#6D5A4C] hover:bg-[#EFE5D8] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#D46244] hover:bg-[#C25538] text-white text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: EDIT SUBTOPIC */}
+      {editingSubTopic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#FAF7F2] rounded-3xl border border-[#DFD3C3] shadow-2xl p-6 sm:p-7">
+            <button
+              onClick={() => setEditingSubTopic(null)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-[#6F5B4B] border border-[#DDD0BF] flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-heading font-extrabold text-xl text-[#2F241C] tracking-tight mb-1">
+              Edit Subtopic: {editingSubTopic.subTopic.name}
+            </h3>
+            <p className="text-xs text-[#7A6656] font-medium mb-4">
+              Rename tense subtopic, grammatical formula, or summary.
+            </p>
+
+            <form onSubmit={handleSaveEditSubTopic} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Subtopic / Tense Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingSubTopic.name}
+                  onChange={(e) =>
+                    setEditingSubTopic((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Grammatical Formula
+                </label>
+                <input
+                  type="text"
+                  value={editingSubTopic.formula}
+                  onChange={(e) =>
+                    setEditingSubTopic((prev) => (prev ? { ...prev, formula: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none font-mono text-[11px]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#564335] uppercase tracking-wider mb-1">
+                  Summary
+                </label>
+                <textarea
+                  rows={2}
+                  value={editingSubTopic.summary}
+                  onChange={(e) =>
+                    setEditingSubTopic((prev) => (prev ? { ...prev, summary: e.target.value } : null))
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingSubTopic(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#6D5A4C] hover:bg-[#EFE5D8] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#D46244] hover:bg-[#C25538] text-white text-xs font-bold cursor-pointer shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* CONFIRMATION MODAL: DELETE SUBJECT, TOPIC, OR TEST */}

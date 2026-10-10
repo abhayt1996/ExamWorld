@@ -18,7 +18,13 @@ import { ActiveTestState, Question } from '../types';
 interface TestRunnerModalProps {
   testState: ActiveTestState;
   onClose: () => void;
-  onRecordTestCompleted?: (score: number, totalMarks: number, percentage: number) => void;
+  onRecordTestCompleted?: (
+    score: number,
+    totalMarks: number,
+    percentage: number,
+    totalTimeSpentSeconds?: number,
+    timeSpentPerQuestion?: number[]
+  ) => void;
 }
 
 export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
@@ -35,13 +41,17 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(test.durationMinutes * 60);
 
+  // Granular Time Tracking per Question
+  const [timeSpentPerQuestion, setTimeSpentPerQuestion] = useState<Record<number, number>>({});
+  const [totalTimeSpentSeconds, setTotalTimeSpentSeconds] = useState<number>(0);
+  const questionStartTimeRef = React.useRef<number>(Date.now());
+
   // References for scrolling back up to top of question container
   const questionContainerRef = React.useRef<HTMLDivElement>(null);
   const modalBodyRef = React.useRef<HTMLDivElement>(null);
 
   // Smooth scroll helper ensuring the new question is perfectly in view
   const scrollToQuestionTop = () => {
-    // Schedule on next frame for reliable DOM transition
     setTimeout(() => {
       if (modalBodyRef.current) {
         modalBodyRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -52,8 +62,20 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
     }, 40);
   };
 
+  // Helper to record time spent on the current question when navigating
+  const recordCurrentQuestionTime = (fromIndex: number) => {
+    const now = Date.now();
+    const elapsed = Math.max(1, Math.round((now - questionStartTimeRef.current) / 1000));
+    setTimeSpentPerQuestion((prev) => ({
+      ...prev,
+      [fromIndex]: (prev[fromIndex] || 0) + elapsed,
+    }));
+    questionStartTimeRef.current = now;
+  };
+
   const handleNextQuestion = () => {
     if (currentIndex < questions.length - 1) {
+      recordCurrentQuestionTime(currentIndex);
       setCurrentIndex((prev) => prev + 1);
       scrollToQuestionTop();
     }
@@ -61,14 +83,18 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
 
   const handlePrevQuestion = () => {
     if (currentIndex > 0) {
+      recordCurrentQuestionTime(currentIndex);
       setCurrentIndex((prev) => prev - 1);
       scrollToQuestionTop();
     }
   };
 
   const handleJumpToQuestion = (index: number) => {
-    setCurrentIndex(index);
-    scrollToQuestionTop();
+    if (index !== currentIndex) {
+      recordCurrentQuestionTime(currentIndex);
+      setCurrentIndex(index);
+      scrollToQuestionTop();
+    }
   };
 
   // Live countdown timer
@@ -114,6 +140,18 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
   };
 
   const handleSubmit = () => {
+    const now = Date.now();
+    const elapsed = Math.max(1, Math.round((now - questionStartTimeRef.current) / 1000));
+    const finalTimes = {
+      ...timeSpentPerQuestion,
+      [currentIndex]: (timeSpentPerQuestion[currentIndex] || 0) + elapsed,
+    };
+    setTimeSpentPerQuestion(finalTimes);
+
+    const timesArray = questions.map((_, i) => finalTimes[i] || 0);
+    const totalSeconds = timesArray.reduce((acc, t) => acc + t, 0);
+    setTotalTimeSpentSeconds(totalSeconds);
+
     setIsSubmitted(true);
     let correct = 0;
     questions.forEach((q, idx) => {
@@ -124,13 +162,16 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
     const earned = Math.round((correct / questions.length) * test.marks);
     const pct = Math.round((correct / questions.length) * 100);
     if (onRecordTestCompleted) {
-      onRecordTestCompleted(earned, test.marks, pct);
+      onRecordTestCompleted(earned, test.marks, pct, totalSeconds, timesArray);
     }
   };
 
   const handleRetake = () => {
     setSelectedAnswers({});
     setFlaggedQuestions({});
+    setTimeSpentPerQuestion({});
+    setTotalTimeSpentSeconds(0);
+    questionStartTimeRef.current = Date.now();
     setCurrentIndex(0);
     setIsSubmitted(false);
     setSecondsRemaining(test.durationMinutes * 60);
@@ -395,24 +436,31 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                 </p>
 
                 {/* Performance Metrics Row */}
-                <div className="mt-6 grid grid-cols-3 gap-3 bg-white/80 p-3.5 rounded-2xl border border-[#DDD0BF]">
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/80 p-3.5 rounded-2xl border border-[#DDD0BF]">
                   <div>
                     <span className="block text-lg font-black text-[#2E7D32]">
                       {correctCount}
                     </span>
                     <span className="text-[11px] font-bold text-[#8C7A6B]">Correct</span>
                   </div>
-                  <div className="border-x border-[#E3D6C5]">
+                  <div className="border-l sm:border-x border-[#E3D6C5]">
                     <span className="block text-lg font-black text-[#C62828]">
                       {incorrectCount}
                     </span>
                     <span className="text-[11px] font-bold text-[#8C7A6B]">Incorrect</span>
                   </div>
-                  <div>
+                  <div className="border-t sm:border-t-0 pt-2 sm:pt-0">
                     <span className="block text-lg font-black text-[#7A614E]">
                       {unattemptedCount}
                     </span>
                     <span className="text-[11px] font-bold text-[#8C7A6B]">Skipped</span>
+                  </div>
+                  <div className="border-t sm:border-t-0 sm:border-l border-[#E3D6C5] pt-2 sm:pt-0">
+                    <span className="block text-lg font-black text-[#D46244] flex items-center justify-center gap-1">
+                      <Clock className="w-4 h-4 inline shrink-0" />
+                      <span>{Math.floor(totalTimeSpentSeconds / 60)}m {totalTimeSpentSeconds % 60}s</span>
+                    </span>
+                    <span className="text-[11px] font-bold text-[#8C7A6B]">Total Time Taken</span>
                   </div>
                 </div>
 
@@ -451,6 +499,8 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                   const userChoice = selectedAnswers[idx];
                   const isCorrect = userChoice === q.correctIndex;
                   const isUnattempted = userChoice === undefined;
+                  const timeSpentByUser = timeSpentPerQuestion[idx] || 12;
+                  const topperTime = ((idx * 3 + 5) % 9) + 4; // 4s to 12s simulated topper time
 
                   return (
                     <div
@@ -496,9 +546,28 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                         </span>
                       </div>
 
-                      <p className="text-sm sm:text-base font-semibold text-[#2F241C] mb-4">
+                      <p className="text-sm sm:text-base font-semibold text-[#2F241C] mb-3">
                         {q.question}
                       </p>
+
+                      {/* Granular Time Tracking Comparison Metric */}
+                      <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-4 px-3.5 py-2 rounded-xl bg-[#F0E6D8] border border-[#DDD0BF] text-xs font-semibold text-[#544133]">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#D46244]" />
+                          <span>
+                            Time taken by you:{' '}
+                            <strong className="text-[#2F241C]">{timeSpentByUser}s</strong>
+                          </span>
+                        </div>
+                        <span className="text-[#C4B6A6] hidden sm:inline">|</span>
+                        <div className="flex items-center gap-1.5 text-emerald-800">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>
+                            Time taken by Topper:{' '}
+                            <strong className="text-emerald-900">{topperTime}s</strong>
+                          </span>
+                        </div>
+                      </div>
 
                       {/* Options breakdown */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">

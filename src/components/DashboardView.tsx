@@ -11,6 +11,7 @@ import {
   Layers,
   ChevronRight,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 import { UserProfile, UserTestRecord } from '../types';
 
@@ -18,12 +19,14 @@ interface DashboardViewProps {
   user: UserProfile;
   onBackToHome: () => void;
   onSelectClassToPractice: () => void;
+  onOpenLeaderboard?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   onBackToHome,
   onSelectClassToPractice,
+  onOpenLeaderboard,
 }) => {
   const history: UserTestRecord[] = user.testHistory;
 
@@ -78,7 +81,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[#8C7A6B]">
+          {onOpenLeaderboard && (
+            <button
+              onClick={onOpenLeaderboard}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Global Leaderboard</span>
+            </button>
+          )}
+
+          <span className="text-xs font-semibold text-[#8C7A6B] hidden sm:inline">
             Dashboard for <strong className="text-[#32241B]">{user.name}</strong> (Class {user.currentClass})
           </span>
           <button

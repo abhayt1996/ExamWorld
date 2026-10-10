@@ -13,6 +13,7 @@ import { LoginModal } from './components/LoginModal';
 import { ProfileView } from './components/ProfileView';
 import { DashboardView } from './components/DashboardView';
 import { AdminDashboardView } from './components/AdminDashboardView';
+import { LeaderboardView } from './components/LeaderboardView';
 import { Footer } from './components/Footer';
 import {
   CLASSES_LIST,
@@ -25,6 +26,7 @@ import {
   ClassLevel,
   Subject,
   ChapterTopic,
+  NestedSubTopic,
   TopicTest,
   ActiveTestState,
   UserProfile,
@@ -41,7 +43,7 @@ import {
 import { ShieldAlert } from 'lucide-react';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard'>('classes');
+  const [activeView, setActiveView] = useState<'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard' | 'leaderboard'>('classes');
   const [selectedClassId, setSelectedClassId] = useState<ClassLevel>('10');
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
@@ -138,7 +140,7 @@ export default function App() {
 
   // Safe navigation with client-side Route Guard middleware
   const navigateToView = (
-    targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard',
+    targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard' | 'leaderboard',
     targetIsAdmin = false
   ) => {
     const guard = executeRouteGuard(targetView, targetIsAdmin);
@@ -541,8 +543,194 @@ export default function App() {
     });
   };
 
-  // When a test is completed in the test runner, dynamically append to user history
-  const handleRecordTestCompleted = (score: number, totalMarks: number, percentage: number) => {
+  // Update Subject details (rename, code, category, stream)
+  const handleUpdateSubject = (
+    classId: ClassLevel,
+    subjectId: string,
+    updated: Partial<Subject>
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updatedList = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return { ...sub, ...updated };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => (s ? { ...s, ...updated } : null));
+      }
+
+      return {
+        ...prev,
+        [classId]: updatedList,
+      };
+    });
+  };
+
+  // Update Topic details (title, summary, chapterNumber)
+  const handleUpdateTopic = (
+    classId: ClassLevel,
+    subjectId: string,
+    topicId: string,
+    updatedTopic: Partial<ChapterTopic>
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updatedList = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.map((t) => {
+              if (t.id === topicId) {
+                return { ...t, ...updatedTopic };
+              }
+              return t;
+            }),
+          };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => {
+          if (!s) return null;
+          return {
+            ...s,
+            topics: s.topics.map((t) => (t.id === topicId ? { ...t, ...updatedTopic } : t)),
+          };
+        });
+      }
+
+      return {
+        ...prev,
+        [classId]: updatedList,
+      };
+    });
+  };
+
+  // Update Subtopic / Tense details
+  const handleUpdateSubTopic = (
+    classId: ClassLevel,
+    subjectId: string,
+    topicId: string,
+    subTopicId: string,
+    updatedSub: Partial<NestedSubTopic>
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updatedList = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.map((t) => {
+              if (t.id === topicId && t.subTopics) {
+                return {
+                  ...t,
+                  subTopics: t.subTopics.map((st) =>
+                    st.id === subTopicId ? { ...st, ...updatedSub } : st
+                  ),
+                };
+              }
+              return t;
+            }),
+          };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => {
+          if (!s) return null;
+          return {
+            ...s,
+            topics: s.topics.map((t) => {
+              if (t.id === topicId && t.subTopics) {
+                return {
+                  ...t,
+                  subTopics: t.subTopics.map((st) =>
+                    st.id === subTopicId ? { ...st, ...updatedSub } : st
+                  ),
+                };
+              }
+              return t;
+            }),
+          };
+        });
+      }
+
+      return {
+        ...prev,
+        [classId]: updatedList,
+      };
+    });
+  };
+
+  // Update Test details & questions
+  const handleUpdateTest = (
+    classId: ClassLevel,
+    subjectId: string,
+    topicId: string,
+    updatedTest: TopicTest
+  ) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updatedList = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.map((t) => {
+              if (t.id === topicId) {
+                return {
+                  ...t,
+                  tests: t.tests.map((test) =>
+                    test.id === updatedTest.id ? updatedTest : test
+                  ),
+                };
+              }
+              return t;
+            }),
+          };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => {
+          if (!s) return null;
+          return {
+            ...s,
+            topics: s.topics.map((t) => {
+              if (t.id === topicId) {
+                return {
+                  ...t,
+                  tests: t.tests.map((test) =>
+                    test.id === updatedTest.id ? updatedTest : test
+                  ),
+                };
+              }
+              return t;
+            }),
+          };
+        });
+      }
+
+      return {
+        ...prev,
+        [classId]: updatedList,
+      };
+    });
+  };
+
+  // When a test is completed in the test runner, dynamically append to user history with granular time tracking
+  const handleRecordTestCompleted = (
+    score: number,
+    totalMarks: number,
+    percentage: number,
+    totalTimeSpentSeconds?: number,
+    timeSpentPerQuestion?: number[]
+  ) => {
     if (!activeTestState) return;
 
     const newRecord: UserTestRecord = {
@@ -556,7 +744,11 @@ export default function App() {
       totalMarks,
       percentage,
       date: 'Just now',
-      timeSpentMinutes: activeTestState.test.durationMinutes,
+      timeSpentMinutes: totalTimeSpentSeconds
+        ? Math.max(1, Math.round(totalTimeSpentSeconds / 60))
+        : activeTestState.test.durationMinutes,
+      totalTimeSpentSeconds: totalTimeSpentSeconds || activeTestState.test.durationMinutes * 60,
+      timeSpentPerQuestion,
     };
 
     setUserProfile((prev) => ({
@@ -602,6 +794,7 @@ export default function App() {
         }}
         onOpenProfile={() => navigateToView('profile')}
         onOpenDashboard={() => navigateToView('dashboard', isAdmin)}
+        onOpenLeaderboard={() => navigateToView('leaderboard')}
         onLogout={handleLogout}
       />
 
@@ -677,21 +870,38 @@ export default function App() {
                 onToggleTest={handleToggleTest}
                 onAddSubject={handleAddSubject}
                 onDeleteSubject={handleDeleteSubject}
+                onUpdateSubject={handleUpdateSubject}
                 onAddTopic={handleAddTopic}
                 onDeleteTopic={handleDeleteTopic}
+                onUpdateTopic={handleUpdateTopic}
+                onUpdateSubTopic={handleUpdateSubTopic}
                 onAddTest={handleAddTest}
                 onDeleteTest={handleDeleteTest}
+                onUpdateTest={handleUpdateTest}
                 onSetAllGrades={handleSetAllGrades}
                 onBackToHome={handleBackToClasses}
                 onChangePasswordClick={() => navigateToView('profile')}
+                onOpenLeaderboard={() => navigateToView('leaderboard')}
               />
             ) : (
               <DashboardView
                 user={userProfile}
                 onBackToHome={handleBackToClasses}
                 onSelectClassToPractice={handleBackToClasses}
+                onOpenLeaderboard={() => navigateToView('leaderboard')}
               />
             )}
+          </div>
+        )}
+
+        {/* Global Student Leaderboard View */}
+        {activeView === 'leaderboard' && (
+          <div className="animate-in fade-in duration-200">
+            <LeaderboardView
+              currentUser={isLoggedIn ? userProfile : null}
+              onBackToDashboard={() => navigateToView('dashboard', isAdmin)}
+              onSelectClassToPractice={handleBackToClasses}
+            />
           </div>
         )}
       </main>

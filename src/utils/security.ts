@@ -146,18 +146,23 @@ export const clearAuthSession = (): void => {
  */
 export interface RouteGuardResult {
   allowed: boolean;
-  targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard';
+  targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard' | 'leaderboard';
   securityMessage?: string;
 }
 
 export const executeRouteGuard = (
-  requestedView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard',
+  requestedView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard' | 'leaderboard',
   isAdminView = false
 ): RouteGuardResult => {
   const session = getActiveAuthSession();
 
-  // Public views: Classes, Subjects, Topics are publicly browsable
-  if (requestedView === 'classes' || requestedView === 'subjects' || requestedView === 'topics') {
+  // Public views: Classes, Subjects, Topics, and Leaderboard are publicly browsable
+  if (
+    requestedView === 'classes' ||
+    requestedView === 'subjects' ||
+    requestedView === 'topics' ||
+    requestedView === 'leaderboard'
+  ) {
     return { allowed: true, targetView: requestedView };
   }
 
