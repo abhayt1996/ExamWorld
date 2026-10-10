@@ -1,4 +1,431 @@
-import { ClassData, Subject } from '../types';
+import { ClassData, Subject, ChapterTopic, UserProfile } from '../types';
+
+// Standard NCERT English Grammar chapter modules strictly as specified in prompt
+const NCERT_ENGLISH_GRAMMAR_TOPICS: ChapterTopic[] = [
+  {
+    id: 'eg-ch1',
+    chapterNumber: 1,
+    title: 'Parts of Speech & Word Classes',
+    summary: 'Identification and contextual functions of Nouns, Pronouns, Adjectives, Verbs, Adverbs, Prepositions, Conjunctions, and Interjections.',
+    keyConcepts: ['Noun Types & Abstract Nouns', 'Transitive vs Intransitive Verbs', 'Prepositional Phrases', 'Coordinating vs Subordinating Conjunctions'],
+    tests: [
+      {
+        id: 't-eg-pos-1',
+        title: 'Diagnostic Test: Identifying Parts of Speech',
+        type: 'diagnostic',
+        badge: 'Diagnostic',
+        questionsCount: 4,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Easy',
+        questions: [
+          {
+            id: 'q-pos-1',
+            question: 'Identify the part of speech of the capitalized word: "She spoke very SOFTLY during the assembly."',
+            options: ['Adjective', 'Adverb', 'Verb', 'Preposition'],
+            correctIndex: 1,
+            explanation: '"Softly" modifies the verb "spoke", describing how the action was performed. Therefore, it is an adverb of manner.'
+          },
+          {
+            id: 'q-pos-2',
+            question: 'Which of the following sentences contains an abstract noun?',
+            options: ['The wooden chair was broken.', 'Honesty is the greatest virtue in life.', 'He drank a glass of cold water.', 'Birds build nests in tall trees.'],
+            correctIndex: 1,
+            explanation: '"Honesty" and "virtue" refer to intangible concepts, qualities, and states that cannot be physically touched, making them abstract nouns.'
+          },
+          {
+            id: 'q-pos-3',
+            question: 'In "The train arrived ON time", what part of speech is "ON"?',
+            options: ['Conjunction', 'Preposition', 'Adverb', 'Interjection'],
+            correctIndex: 1,
+            explanation: '"On" shows the temporal relationship between the arrival of the train and the scheduled time; it functions as a preposition.'
+          },
+          {
+            id: 'q-pos-4',
+            question: 'Identify the coordinating conjunction in: "He studied hard, YET he was nervous before the exam."',
+            options: ['hard', 'before', 'yet', 'nervous'],
+            correctIndex: 2,
+            explanation: '"Yet" connects two independent clauses showing contrast, functioning as a coordinating conjunction (FANBOYS).'
+          }
+        ]
+      },
+      {
+        id: 't-eg-pos-2',
+        title: 'Mastery Test: Advanced Syntactic Functions',
+        type: 'concept',
+        badge: 'Concept Test',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-pos-m1',
+            question: 'In "He ran FAST", "fast" is an adverb. In "He is a FAST runner", "fast" is a/an:',
+            options: ['Adverb', 'Adjective', 'Noun', 'Pronoun'],
+            correctIndex: 1,
+            explanation: 'In the second sentence, "fast" directly modifies the noun "runner", so it functions as an adjective.'
+          },
+          {
+            id: 'q-pos-m2',
+            question: 'Which underlined word is a reflexive pronoun?',
+            options: ['She taught HERSELF Spanish.', 'This is HER book.', 'SHE went to the library.', 'Give it to HER.'],
+            correctIndex: 0,
+            explanation: '"Herself" reflects the action back onto the subject "she", functioning as a reflexive pronoun.'
+          },
+          {
+            id: 'q-pos-m3',
+            question: 'Which of the following contains a collective noun?',
+            options: ['A pride of lions rested beneath the tree.', 'Many brave soldiers were honored.', 'The blue ocean looked calm.', 'She read two new novels.'],
+            correctIndex: 0,
+            explanation: '"Pride" refers to a group or collection of lions taken together as a single unit.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch2',
+    chapterNumber: 2,
+    title: 'Tenses & Aspect Systems',
+    summary: 'Present, Past, and Future tenses across Simple, Continuous, Perfect, and Perfect Continuous forms with time adverbials.',
+    keyConcepts: ['Present Perfect vs Simple Past', 'Past Perfect in Sequential Narrative', 'Future with Will / Going To', 'Stative Verbs Constraints'],
+    tests: [
+      {
+        id: 't-eg-tns-1',
+        title: 'Diagnostic Test: Tenses & Time Expressions',
+        type: 'diagnostic',
+        badge: 'Diagnostic',
+        questionsCount: 4,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-tns-1',
+            question: 'Fill in the blank: "By next December, we _______ in this city for ten years."',
+            options: ['will live', 'will have been living', 'are living', 'had been living'],
+            correctIndex: 1,
+            explanation: 'The sentence refers to an action continuing up to a specific point in the future ("by next December"), requiring the Future Perfect Continuous tense.'
+          },
+          {
+            id: 'q-tns-2',
+            question: '"The train _______ before we reached the railway station."',
+            options: ['had left', 'left', 'has left', 'was leaving'],
+            correctIndex: 0,
+            explanation: 'When two past actions occur sequentially, the earlier action is expressed in the Past Perfect tense ("had left") and the later in Simple Past ("reached").'
+          },
+          {
+            id: 'q-tns-3',
+            question: 'Choose the correct form: "She _______ her homework just now."',
+            options: ['completed', 'has completed', 'had completed', 'completes'],
+            correctIndex: 1,
+            explanation: 'The adverbial "just now" or "just" connected with present relevance requires the Present Perfect tense ("has completed").'
+          },
+          {
+            id: 'q-tns-4',
+            question: 'Identify the tense: "The scientist has been conducting this research since 2021."',
+            options: ['Present Perfect Continuous', 'Past Continuous', 'Future Continuous', 'Present Continuous'],
+            correctIndex: 0,
+            explanation: '"Has been conducting" features has + been + verb-ing with "since", denoting Present Perfect Continuous tense.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch3',
+    chapterNumber: 3,
+    title: 'Active & Passive Voice',
+    summary: 'Transformation rules across various tenses, imperative passive forms, modal auxiliaries in passive, and agent omission rules.',
+    keyConcepts: ['Object to Subject Inversion', 'Auxiliary Be + Past Participle V3', 'Passive of Imperatives (Let + be + V3)', 'Omission of Vague Agents (Someone, People)'],
+    tests: [
+      {
+        id: 't-eg-vox-1',
+        title: 'Test 1: Voice Transformations & Modals',
+        type: 'concept',
+        badge: 'Voice Mastery',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-vox-1',
+            question: 'Convert into Passive Voice: "The municipal workers are repairing the road."',
+            options: [
+              'The road was being repaired by the municipal workers.',
+              'The road is being repaired by the municipal workers.',
+              'The road has been repaired by the municipal workers.',
+              'The road is repaired by the municipal workers.'
+            ],
+            correctIndex: 1,
+            explanation: 'Present continuous active (are repairing) transforms into "is/are being + past participle" (is being repaired).'
+          },
+          {
+            id: 'q-vox-2',
+            question: 'Convert imperative to passive: "Close the windows immediately."',
+            options: [
+              'Let the windows be closed immediately.',
+              'The windows should close immediately.',
+              'You must close windows.',
+              'The windows were closed immediately.'
+            ],
+            correctIndex: 0,
+            explanation: 'Imperative sentences follow the pattern: "Let + object + be + past participle (V3)".'
+          },
+          {
+            id: 'q-vox-3',
+            question: 'Passive form of: "Someone stole my grandfather\'s antique watch."',
+            options: [
+              'My grandfather\'s antique watch was stolen.',
+              'My grandfather\'s antique watch has been stolen by someone.',
+              'Someone had stolen my grandfather\'s antique watch.',
+              'My grandfather\'s watch is stolen by someone.'
+            ],
+            correctIndex: 0,
+            explanation: 'In past simple ("stole"), passive is "was/were + V3". Indefinite pronouns like "someone" are naturally omitted in standard formal passive.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch4',
+    chapterNumber: 4,
+    title: 'Direct & Indirect Speech (Reported Speech)',
+    summary: 'Reporting statements, interrogatives, imperatives, exclamations; backshifting of tenses and pronoun/time-expression shifts.',
+    keyConcepts: ['Said to → Told', 'Tense Backshift Rules', 'Questions with If/Whether or Wh-word', 'Time Adverbial Shifts (Now → Then, Tomorrow → Next Day)'],
+    tests: [
+      {
+        id: 't-eg-rep-1',
+        title: 'Test 1: Reported Speech Rules & Shifts',
+        type: 'concept',
+        badge: 'Reporting Mastery',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-rep-1',
+            question: 'Convert to indirect speech: The teacher said, "The earth revolves around the sun."',
+            options: [
+              'The teacher said that the earth revolved around the sun.',
+              'The teacher said that the earth revolves around the sun.',
+              'The teacher said whether the earth was revolving around the sun.',
+              'The teacher told that the earth had revolved around the sun.'
+            ],
+            correctIndex: 1,
+            explanation: 'Universal scientific truths and general facts do not change their tense even when the reporting verb is in the past tense.'
+          },
+          {
+            id: 'q-rep-2',
+            question: 'Convert to indirect: Rohan asked Priya, "Where are you going for summer vacations?"',
+            options: [
+              'Rohan asked Priya where she was going for summer vacations.',
+              'Rohan asked Priya where was she going for summer vacations.',
+              'Rohan asked Priya if she is going for summer vacations.',
+              'Rohan asked Priya that where she went for vacations.'
+            ],
+            correctIndex: 0,
+            explanation: 'In indirect interrogatives with Wh-words, retain the Wh-word and change inverted question order to affirmative word order (subject + verb: "where she was going").'
+          },
+          {
+            id: 'q-rep-3',
+            question: 'Convert: Father said to me, "Do not waste your time on social media."',
+            options: [
+              'Father advised me not to waste my time on social media.',
+              'Father asked me that I should not waste time.',
+              'Father said to me do not waste your time.',
+              'Father ordered me that not wasting my time.'
+            ],
+            correctIndex: 0,
+            explanation: 'Negative imperatives use "advised / forbade + infinitive (not to + V1)" with appropriate pronoun changes.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch5',
+    chapterNumber: 5,
+    title: 'Modals & Auxiliary Verbs',
+    summary: 'Expressing ability, permission, obligation, necessity, possibility, deduction, and polite requests using modal auxiliaries.',
+    keyConcepts: ['Can / Could (Ability & Politeness)', 'May / Might (Possibility & Permission)', 'Must / Ought to (Obligation & Moral Duty)', 'Shall / Should (Recommendation & Advice)'],
+    tests: [
+      {
+        id: 't-eg-mod-1',
+        title: 'Test 1: Modal Usage in Context',
+        type: 'diagnostic',
+        badge: 'Modals Test',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Easy',
+        questions: [
+          {
+            id: 'q-mod-1',
+            question: 'Select the best modal for moral duty: "We _______ respect our national symbols and elders."',
+            options: ['can', 'ought to', 'might', 'could'],
+            correctIndex: 1,
+            explanation: '"Ought to" expresses moral obligation and ethical civic responsibility.'
+          },
+          {
+            id: 'q-mod-2',
+            question: 'The sky is heavily overcast with dark clouds. It _______ rain this afternoon.',
+            options: ['may', 'should', 'would', 'shall'],
+            correctIndex: 0,
+            explanation: '"May" conveys a strong factual possibility based on visible present evidence.'
+          },
+          {
+            id: 'q-mod-3',
+            question: 'Which sentence correctly makes a formal, polite request?',
+            options: [
+              'Could you please forward the document to my email?',
+              'You must forward the email.',
+              'Forward the email right now.',
+              'Can you forward it now?'
+            ],
+            correctIndex: 0,
+            explanation: '"Could you please..." is the standard formal polite construction for solicitations.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch6',
+    chapterNumber: 6,
+    title: 'Determiners & Articles',
+    summary: 'Usage of Articles (A, An, The), Demonstratives, Possessives, Quantifiers (Some, Any, Much, Many, Little, Few, Each, Every).',
+    keyConcepts: ['Definite vs Indefinite Articles', 'Few vs A Few vs The Few', 'Little vs A Little vs The Little', 'Distributives: Each vs Every'],
+    tests: [
+      {
+        id: 't-eg-det-1',
+        title: 'Test 1: Quantifiers & Article Precision',
+        type: 'concept',
+        badge: 'Determiners',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-det-1',
+            question: 'He is _______ European scholar who won an international award.',
+            options: ['a', 'an', 'the', 'no article'],
+            correctIndex: 0,
+            explanation: 'Although "European" begins with the vowel letter "E", its initial phonetic sound is the consonant glide /j/ ("yu-ro-pean"), hence taking article "a".'
+          },
+          {
+            id: 'q-det-2',
+            question: 'There is _______ hope of his recovery as his medical parameters have stabilized.',
+            options: ['little', 'a little', 'few', 'a few'],
+            correctIndex: 1,
+            explanation: '"A little" denotes a positive small amount (some hope) with uncountable nouns, whereas "little" alone conveys almost no hope (negative sense).'
+          },
+          {
+            id: 'q-det-3',
+            question: '_______ student in the classroom was presented with a certificate.',
+            options: ['Each', 'All', 'Both', 'Many'],
+            correctIndex: 0,
+            explanation: '"Each" is used with a singular countable noun ("student") and singular verb ("was") to emphasize individuals in a definite group.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch7',
+    chapterNumber: 7,
+    title: 'Clauses & Sentence Synthesis',
+    summary: 'Noun clauses, Adverbial clauses (Condition, Time, Reason, Contrast), and Relative/Adjective clauses in complex sentences.',
+    keyConcepts: ['Independent vs Dependent Clauses', 'Relative Pronouns (Who, Whom, Whose, Which, That)', 'Conditional Clauses (Zero, First, Second, Third)', 'Adverbial Clauses of Concession (Although, Even though)'],
+    tests: [
+      {
+        id: 't-eg-cls-1',
+        title: 'Test 1: Clause Identification & Synthesis',
+        type: 'hots',
+        badge: 'HOTS Test',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Hard',
+        questions: [
+          {
+            id: 'q-cls-1',
+            question: 'In "I knew THAT HE WOULD WIN THE COMPETITION", the underlined clause is a/an:',
+            options: ['Noun clause', 'Adjective clause', 'Adverb clause of condition', 'Prepositional clause'],
+            correctIndex: 0,
+            explanation: 'The clause functions as the direct object of the transitive verb "knew" (answers "knew what?"), making it a Noun Clause.'
+          },
+          {
+            id: 'q-cls-2',
+            question: 'Complete Third Conditional: "If you had informed me earlier, I _______ the tickets."',
+            options: ['would book', 'would have booked', 'will book', 'had booked'],
+            correctIndex: 1,
+            explanation: 'Past hypothetical condition (past perfect: had informed) requires "would have + past participle" (would have booked).'
+          },
+          {
+            id: 'q-cls-3',
+            question: 'Combine into a single sentence using relative clause: "This is the laboratory. Sir C.V. Raman conducted his scattering experiments here."',
+            options: [
+              'This is the laboratory where Sir C.V. Raman conducted his scattering experiments.',
+              'This is the laboratory and Sir C.V. Raman conducted experiments here.',
+              'Because Sir C.V. Raman conducted experiments, this is the laboratory.',
+              'This laboratory Sir C.V. Raman conducted scattering experiments.'
+            ],
+            correctIndex: 0,
+            explanation: 'The relative adverb "where" synthesizes the place reference into an adjective relative clause modifying "laboratory".'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'eg-ch8',
+    chapterNumber: 8,
+    title: 'Subject-Verb Concord (Agreement)',
+    summary: 'Rules of agreement in number and person between subjects and verbs, compound subjects, and collective nouns.',
+    keyConcepts: ['Either...or / Neither...nor proximity rule', 'Along with / As well as parenthetical phrases', 'Indefinite pronouns (Everyone, Nobody)', 'Plural in form but singular in meaning (Mathematics, Physics, News)'],
+    tests: [
+      {
+        id: 't-eg-svc-1',
+        title: 'Test 1: Subject-Verb Agreement Invariants',
+        type: 'concept',
+        badge: 'Concord Test',
+        questionsCount: 3,
+        durationMinutes: 15,
+        marks: 15,
+        difficulty: 'Medium',
+        questions: [
+          {
+            id: 'q-svc-1',
+            question: 'The captain, along with his entire team, _______ arriving this evening.',
+            options: ['is', 'are', 'were', 'have been'],
+            correctIndex: 0,
+            explanation: 'When subjects are joined by "along with" or "as well as", the verb agrees with the primary subject ("The captain", which is singular).'
+          },
+          {
+            id: 'q-svc-2',
+            question: 'Neither the manager nor the employees _______ available for the briefing.',
+            options: ['was', 'were', 'is', 'has been'],
+            correctIndex: 1,
+            explanation: 'In "neither...nor" constructions, the verb agrees with the subject closest to it ("the employees", which is plural).'
+          },
+          {
+            id: 'q-svc-3',
+            question: 'Mathematics _______ always considered a foundational discipline.',
+            options: ['has been', 'have been', 'are', 'were'],
+            correctIndex: 0,
+            explanation: 'Names of disciplines ending in -s (Mathematics, Physics, Economics) take singular verbs.'
+          }
+        ]
+      }
+    ]
+  }
+];
 
 export const CLASSES_LIST: ClassData[] = [
   {
@@ -122,8 +549,106 @@ export const CLASSES_LIST: ClassData[] = [
   },
 ];
 
+// Helper to create the distinct "English Grammar" subject object for every class
+const createEnglishGrammarSubject = (classId: string): Subject => ({
+  id: `c${classId}-eng-grammar`,
+  name: 'English Grammar',
+  code: `ENG-GRM-${classId}`,
+  category: 'grammar',
+  stream: 'General',
+  icon: 'BookOpen',
+  colorScheme: {
+    bg: 'bg-[#EBF7F0]',
+    border: 'border-[#B4E5CA]',
+    iconBg: 'bg-[#10B981] text-white',
+    iconColor: 'text-[#065F46]',
+    textColor: 'text-[#064E3B]',
+  },
+  topics: NCERT_ENGLISH_GRAMMAR_TOPICS,
+});
+
+// Mock Initial User Profile for demonstration
+export const INITIAL_USER_PROFILE: UserProfile = {
+  id: 'usr_882041',
+  name: 'Aarav Sharma',
+  mobile: '9876543210',
+  email: 'aarav.sharma@examworld.site',
+  currentClass: '10',
+  avatarColor: 'bg-gradient-to-br from-[#D46244] to-[#B3492F]',
+  joinedDate: 'Jan 2026',
+  testHistory: [
+    {
+      id: 'rec-1',
+      testId: 't-eg-pos-1',
+      testTitle: 'Diagnostic Test: Identifying Parts of Speech',
+      subjectName: 'English Grammar',
+      className: 'Class 10',
+      chapterTitle: 'Parts of Speech & Word Classes',
+      score: 15,
+      totalMarks: 15,
+      percentage: 100,
+      date: 'Today, 10:30 AM',
+      timeSpentMinutes: 8,
+    },
+    {
+      id: 'rec-2',
+      testId: 't-rn-1',
+      testTitle: 'Test 1: Fundamental Concepts & Prime Factorization',
+      subjectName: 'Mathematics',
+      className: 'Class 10',
+      chapterTitle: 'Real Numbers',
+      score: 12,
+      totalMarks: 15,
+      percentage: 80,
+      date: 'Yesterday, 4:15 PM',
+      timeSpentMinutes: 12,
+    },
+    {
+      id: 'rec-3',
+      testId: 't-cr-1',
+      testTitle: 'Test 1: Types of Reactions & Balancing',
+      subjectName: 'Science',
+      className: 'Class 10',
+      chapterTitle: 'Chemical Reactions and Equations',
+      score: 13,
+      totalMarks: 15,
+      percentage: 86.6,
+      date: '2 days ago',
+      timeSpentMinutes: 10,
+    },
+    {
+      id: 'rec-4',
+      testId: 't-eg-tns-1',
+      testTitle: 'Diagnostic Test: Tenses & Time Expressions',
+      subjectName: 'English Grammar',
+      className: 'Class 10',
+      chapterTitle: 'Tenses & Aspect Systems',
+      score: 14,
+      totalMarks: 15,
+      percentage: 93.3,
+      date: '3 days ago',
+      timeSpentMinutes: 11,
+    },
+    {
+      id: 'rec-5',
+      testId: 't-ne-1',
+      testTitle: 'Test 1: European Nationalism Milestones',
+      subjectName: 'Social Science',
+      className: 'Class 10',
+      chapterTitle: 'The Rise of Nationalism in Europe',
+      score: 10,
+      totalMarks: 15,
+      percentage: 66.7,
+      date: '5 days ago',
+      timeSpentMinutes: 14,
+    },
+  ],
+};
+
+// Subjects map ensuring EVERY single class includes English Grammar as a distinct subject
 export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
   '10': [
+    createEnglishGrammarSubject('10'),
     {
       id: 'c10-maths',
       name: 'Mathematics',
@@ -232,86 +757,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   explanation: 'To end with digit 0, a number must have both 2 and 5 in its prime factorization. Prime factors of 6 are 2 and 3, lacking 5.'
                 }
               ]
-            },
-            {
-              id: 't-rn-3',
-              title: 'Test 3: Higher Order Thinking (HOTS) Challenge',
-              type: 'hots',
-              badge: 'HOTS Test',
-              questionsCount: 3,
-              durationMinutes: 25,
-              marks: 15,
-              difficulty: 'Hard',
-              questions: [
-                {
-                  id: 'q3-1',
-                  question: 'If n is an odd integer, then n² - 1 is always divisible by:',
-                  options: ['8', '16', '32', '6'],
-                  correctIndex: 0,
-                  explanation: 'Any odd integer can be written as (4q + 1) or (4q + 3). Squaring gives n² - 1 = 16q² + 8q = 8(2q² + q), which is always divisible by 8.'
-                },
-                {
-                  id: 'q3-2',
-                  question: 'What is the remainder when 3²⁰²⁶ is divided by 5?',
-                  options: ['1', '4', '2', '3'],
-                  correctIndex: 1,
-                  explanation: 'Powers of 3 modulo 5 cycle in periods of 4: 3¹≡3, 3²≡4, 3³≡2, 3⁴≡1. 2026 mod 4 = 2. Thus 3²⁰²⁶ ≡ 3² ≡ 4 (mod 5).'
-                },
-                {
-                  id: 'q3-3',
-                  question: 'If the HCF of 65 and 117 is expressible in the form 65m - 117, then the value of m is:',
-                  options: ['4', '2', '1', '3'],
-                  correctIndex: 1,
-                  explanation: 'HCF(65, 117) = 13. 65m - 117 = 13 => 65m = 130 => m = 2.'
-                }
-              ]
-            },
-            {
-              id: 't-rn-4',
-              title: 'Mock Exam: Comprehensive Chapter Review',
-              type: 'mock',
-              badge: 'Mock Exam',
-              questionsCount: 5,
-              durationMinutes: 30,
-              marks: 25,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qm-1',
-                  question: 'The least number that is divisible by all numbers from 1 to 10 (both inclusive) is:',
-                  options: ['10', '100', '504', '2520'],
-                  correctIndex: 3,
-                  explanation: 'LCM(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) = 2³ × 3² × 5 × 7 = 8 × 9 × 5 × 7 = 2520.'
-                },
-                {
-                  id: 'qm-2',
-                  question: 'Which of the following is an irrational number?',
-                  options: ['3.141414...', '2 + √3', '√9 + √16', '(√2 + √3)(√2 - √3)'],
-                  correctIndex: 1,
-                  explanation: '2 is rational, √3 is irrational. The sum of a rational and irrational number is always irrational.'
-                },
-                {
-                  id: 'qm-3',
-                  question: 'If LCM(a, 18) = 36 and HCF(a, 18) = 2, then a =',
-                  options: ['2', '3', '4', '1'],
-                  correctIndex: 2,
-                  explanation: 'a × 18 = LCM × HCF = 36 × 2 = 72 => a = 72 / 18 = 4.'
-                },
-                {
-                  id: 'qm-4',
-                  question: 'Is √p + √q irrational when p and q are distinct prime numbers?',
-                  options: ['Always irrational', 'Always rational', 'Can be rational', 'Cannot be determined'],
-                  correctIndex: 0,
-                  explanation: 'The sum of the square roots of two distinct primes is always irrational.'
-                },
-                {
-                  id: 'qm-5',
-                  question: 'The ratio between LCM and HCF of 5, 15, and 20 is:',
-                  options: ['9:1', '4:3', '11:1', '12:1'],
-                  correctIndex: 3,
-                  explanation: 'HCF(5, 15, 20) = 5. LCM(5, 15, 20) = 60. Ratio = 60:5 = 12:1.'
-                }
-              ]
             }
           ]
         },
@@ -359,207 +804,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['3', '4', '1', '2'],
                   correctIndex: 1,
                   explanation: 'The number of real zeroes is the total number of intersection and tangency points with the x-axis: 3 + 1 = 4.'
-                }
-              ]
-            },
-            {
-              id: 't-poly-2',
-              title: 'Test 2: Standard Level Polynomials Mastery',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 20,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qp2-1',
-                  question: 'If zeroes of quadratic polynomial ax² + bx + c are both positive, then:',
-                  options: ['a and b have same sign', 'a and c have opposite signs', 'a, b, and c all have same sign', 'a and c have same sign, and b has opposite sign'],
-                  correctIndex: 3,
-                  explanation: 'If α, β > 0, αβ = c/a > 0 (so a, c have same sign) and α + β = -b/a > 0 (so b/a < 0, meaning b and a have opposite signs).'
-                },
-                {
-                  id: 'qp2-2',
-                  question: 'If one zero of 3x² + 8x + k is reciprocal of the other, then value of k is:',
-                  options: ['3', '-3', '1/3', '-1/3'],
-                  correctIndex: 0,
-                  explanation: 'If zeroes are α and 1/α, their product is α × (1/α) = 1. Product of zeroes = c/a = k/3 => k/3 = 1 => k = 3.'
-                },
-                {
-                  id: 'qp2-3',
-                  question: 'What is the degree of the zero polynomial?',
-                  options: ['0', '1', 'Undefined', 'Any real number'],
-                  correctIndex: 2,
-                  explanation: 'The degree of the zero polynomial is mathematically undefined.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-m-ch3',
-          chapterNumber: 3,
-          title: 'Pair of Linear Equations in Two Variables',
-          summary: 'Graphical method of solution, consistency/inconsistency, algebraic methods (substitution, elimination).',
-          keyConcepts: ['Unique solution (a1/a2 ≠ b1/b2)', 'Infinite solutions (coincident)', 'No solution (parallel lines)', 'Elimination method'],
-          tests: [
-            {
-              id: 't-le-1',
-              title: 'Test 1: Consistency & Algebraic Methods',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'ql-1',
-                  question: 'For what value of k do equations kx - 2y = 3 and 3x + y = 5 have a unique solution?',
-                  options: ['k = -6', 'k ≠ -6', 'k = 6', 'k ≠ 6'],
-                  correctIndex: 1,
-                  explanation: 'For unique solution, a1/a2 ≠ b1/b2. Here k/3 ≠ -2/1 => k ≠ -6.'
-                },
-                {
-                  id: 'ql-2',
-                  question: 'The pair of linear equations 2x + 3y = 5 and 4x + 6y = 15 represents lines that are:',
-                  options: ['Intersecting', 'Coincident', 'Parallel', 'Perpendicular'],
-                  correctIndex: 2,
-                  explanation: 'a1/a2 = 2/4 = 1/2. b1/b2 = 3/6 = 1/2. c1/c2 = 5/15 = 1/3. Since a1/a2 = b1/b2 ≠ c1/c2, the lines are parallel.'
-                },
-                {
-                  id: 'ql-3',
-                  question: 'Solve for x and y: x + y = 14 and x - y = 4:',
-                  options: ['x = 9, y = 5', 'x = 10, y = 4', 'x = 8, y = 6', 'x = 11, y = 3'],
-                  correctIndex: 0,
-                  explanation: 'Adding both equations: 2x = 18 => x = 9. Substituting x gives y = 14 - 9 = 5.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-m-ch4',
-          chapterNumber: 4,
-          title: 'Quadratic Equations',
-          summary: 'Standard form ax² + bx + c = 0, solutions by factorization and quadratic formula, nature of roots.',
-          keyConcepts: ['Discriminant D = b² - 4ac', 'Real and distinct roots (D > 0)', 'Equal roots (D = 0)', 'Word problems'],
-          tests: [
-            {
-              id: 't-qe-1',
-              title: 'Test 1: Nature of Roots & Quadratic Formula',
-              type: 'diagnostic',
-              badge: 'Diagnostic',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qq-1',
-                  question: 'The quadratic equation 2x² - √5x + 1 = 0 has:',
-                  options: ['Two distinct real roots', 'Two equal real roots', 'No real roots', 'More than two roots'],
-                  correctIndex: 2,
-                  explanation: 'D = b² - 4ac = (-√5)² - 4(2)(1) = 5 - 8 = -3 < 0. Hence it has no real roots.'
-                },
-                {
-                  id: 'qq-2',
-                  question: 'If the equation x² + 2kx + 4 = 0 has equal roots, the values of k are:',
-                  options: ['±1', '±2', '±4', '±3'],
-                  correctIndex: 1,
-                  explanation: 'For equal roots, D = 0 => (2k)² - 4(1)(4) = 0 => 4k² - 16 = 0 => k² = 4 => k = ±2.'
-                },
-                {
-                  id: 'qq-3',
-                  question: 'Which of the following is a root of the equation 3x² - 2√6x + 2 = 0?',
-                  options: ['√(2/3)', '-√(2/3)', '√(3/2)', '2/√3'],
-                  correctIndex: 0,
-                  explanation: 'The equation is (√3x - √2)² = 0, giving double root x = √2 / √3 = √(2/3).'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-m-ch5',
-          chapterNumber: 5,
-          title: 'Arithmetic Progressions',
-          summary: 'nth term of an AP, sum of the first n terms of an AP, and practical daily life applications.',
-          keyConcepts: ['Common difference (d)', 'nth term: an = a + (n-1)d', 'Sum: Sn = n/2[2a + (n-1)d]', 'Arithmetic Mean'],
-          tests: [
-            {
-              id: 't-ap-1',
-              title: 'Test 1: AP Terms & Sum Formulae',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qa-1',
-                  question: 'The 11th term of the AP: -3, -1/2, 2, ... is:',
-                  options: ['28', '22', '-38', '-46½'],
-                  correctIndex: 1,
-                  explanation: 'First term a = -3, common difference d = -1/2 - (-3) = 5/2. 11th term = a + 10d = -3 + 10(5/2) = -3 + 25 = 22.'
-                },
-                {
-                  id: 'qa-2',
-                  question: 'If the sum of first n terms of an AP is 3n² + 5n, then its common difference is:',
-                  options: ['3', '6', '5', '2'],
-                  correctIndex: 1,
-                  explanation: 'Sn = 3n² + 5n. S1 = 8 = a1. S2 = 3(4) + 10 = 22 = a1 + a2 => a2 = 14. Common difference d = 14 - 8 = 6.'
-                },
-                {
-                  id: 'qa-3',
-                  question: 'How many two-digit numbers are divisible by 3?',
-                  options: ['25', '30', '33', '29'],
-                  correctIndex: 1,
-                  explanation: 'Series is 12, 15, ..., 99. an = 12 + (n-1)3 = 99 => 3(n-1) = 87 => n-1 = 29 => n = 30.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-m-ch6',
-          chapterNumber: 6,
-          title: 'Introduction to Trigonometry',
-          summary: 'Trigonometric ratios of acute angles, trigonometric values for standard angles, identities.',
-          keyConcepts: ['sin, cos, tan, cot, sec, cosec', 'Values at 0°, 30°, 45°, 60°, 90°', 'Identity: sin²θ + cos²θ = 1', '1 + tan²θ = sec²θ'],
-          tests: [
-            {
-              id: 't-trig-1',
-              title: 'Test 1: Trigonometric Identities & Standard Angles',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 20,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qt-1',
-                  question: 'If sin θ = 1/2, then the value of (3 cos θ - 4 cos³ θ) is:',
-                  options: ['0', '1', '1/2', '√3/2'],
-                  correctIndex: 0,
-                  explanation: 'If sin θ = 1/2, θ = 30°. cos 30° = √3/2. 3(√3/2) - 4(3√3/8) = (3√3/2) - (3√3/2) = 0.'
-                },
-                {
-                  id: 'qt-2',
-                  question: 'The value of (1 + tan² θ)(1 - sin θ)(1 + sin θ) is equal to:',
-                  options: ['0', '1', '-1', 'sec² θ'],
-                  correctIndex: 1,
-                  explanation: '(1 + tan² θ) = sec² θ. (1 - sin θ)(1 + sin θ) = 1 - sin² θ = cos² θ. sec² θ × cos² θ = 1.'
-                },
-                {
-                  id: 'qt-3',
-                  question: 'If tan θ + cot θ = 2, then tan² θ + cot² θ =',
-                  options: ['2', '4', '1', '0'],
-                  correctIndex: 0,
-                  explanation: 'Squaring both sides: (tan θ + cot θ)² = 4 => tan² θ + cot² θ + 2 tan θ cot θ = 4 => tan² θ + cot² θ + 2(1) = 4 => 2.'
                 }
               ]
             }
@@ -630,132 +874,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
               ]
             }
           ]
-        },
-        {
-          id: 'c10-s-ch2',
-          chapterNumber: 2,
-          title: 'Acids, Bases and Salts',
-          summary: 'Chemical properties of acids and bases, pH scale importance in everyday life, salts preparation & uses.',
-          keyConcepts: ['pH scale 0 to 14', 'Neutralization reaction', 'Baking Soda & Bleaching Powder', 'Plaster of Paris'],
-          tests: [
-            {
-              id: 't-abs-1',
-              title: 'Test 1: Acid-Base Indicators & pH Scale',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qab-1',
-                  question: 'What is the chemical formula of Plaster of Paris?',
-                  options: ['CaSO₄·2H₂O', 'CaSO₄·½H₂O', 'CaSO₄·H₂O', '2CaSO₄·H₂O'],
-                  correctIndex: 1,
-                  explanation: 'Plaster of Paris is calcium sulphate hemihydrate, CaSO₄·½H₂O, prepared by heating gypsum at 373 K.'
-                },
-                {
-                  id: 'qab-2',
-                  question: 'An aqueous solution turns red litmus solution blue. Excess addition of which of the following would reverse the change?',
-                  options: ['Baking powder', 'Lime', 'Ammonium hydroxide solution', 'Hydrochloric acid'],
-                  correctIndex: 3,
-                  explanation: 'Turning red litmus blue indicates an alkaline solution. Adding excess acid (HCl) neutralizes the base and turns the litmus back to red.'
-                },
-                {
-                  id: 'qab-3',
-                  question: 'Tooth enamel is the hardest substance in the human body. It is made up of:',
-                  options: ['Calcium carbonate', 'Calcium hydroxyapatite', 'Calcium phosphate crystalline', 'Calcium fluoride'],
-                  correctIndex: 1,
-                  explanation: 'Tooth enamel is composed of calcium hydroxyapatite (a crystalline form of calcium phosphate), which corrodes when oral pH drops below 5.5.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-s-ch6',
-          chapterNumber: 6,
-          title: 'Life Processes',
-          summary: 'Nutrition (autotrophic & heterotrophic), Respiration in humans and plants, Transportation and Excretion.',
-          keyConcepts: ['Photosynthesis Light Reactions', 'Human Digestive Tract', 'Double Circulation in Heart', 'Nephron Filtration Unit'],
-          tests: [
-            {
-              id: 't-lp-1',
-              title: 'Test 1: Nutrition & Human Physiology',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qlp-1',
-                  question: 'Which enzyme is present in human saliva that breaks down starch into simple sugar?',
-                  options: ['Pepsin', 'Salivary amylase', 'Trypsin', 'Lipase'],
-                  correctIndex: 1,
-                  explanation: 'Salivary amylase (ptyalin) breaks down complex starch molecules into maltose sugar in the mouth.'
-                },
-                {
-                  id: 'qlp-2',
-                  question: 'The structural and functional filtration unit of kidneys is called:',
-                  options: ['Neuron', 'Nephron', 'Alveolus', 'Glomerulus capsule only'],
-                  correctIndex: 1,
-                  explanation: 'The nephron is the basic microscopic filtration unit of the human kidney.'
-                },
-                {
-                  id: 'qlp-3',
-                  question: 'Oxygenated blood from lungs enters the human heart through:',
-                  options: ['Vena Cava', 'Pulmonary Artery', 'Pulmonary Vein', 'Aorta'],
-                  correctIndex: 2,
-                  explanation: 'The pulmonary veins carry oxygen-rich blood from the lungs directly into the left atrium of the heart.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c10-s-ch10',
-          chapterNumber: 10,
-          title: 'Light - Reflection and Refraction',
-          summary: 'Spherical mirrors, mirror formula, magnification, refraction through lenses, lens formula and power.',
-          keyConcepts: ['Concave & Convex Mirrors', 'Refractive Index & Snell Law', 'Lens Formula 1/f = 1/v - 1/u', 'Power of Lens (P = 1/f in meters)'],
-          tests: [
-            {
-              id: 't-light-1',
-              title: 'Test 1: Optics & Ray Diagrams',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'ql-1',
-                  question: 'A convex mirror with focal length f produces a magnification of 1/2. The distance of the object from the mirror is:',
-                  options: ['f', '2f', 'f/2', '4f'],
-                  correctIndex: 0,
-                  explanation: 'm = -v/u = 1/2 => v = -u/2. Using mirror formula 1/f = 1/v + 1/u = -2/u + 1/u = -1/u. Thus u = -f, so object distance is f.'
-                },
-                {
-                  id: 'ql-2',
-                  question: 'SI unit of power of a lens is:',
-                  options: ['Meter', 'Dioptre', 'Centimeter', 'Watt'],
-                  correctIndex: 1,
-                  explanation: 'The SI unit of optical power of a lens is Dioptre (D), where 1 D = 1 m⁻¹.'
-                },
-                {
-                  id: 'ql-3',
-                  question: 'Where should an object be placed in front of a convex lens to get a real image of the same size as the object?',
-                  options: ['At focus F', 'At twice the focal length 2F', 'At infinity', 'Between optical center and focus'],
-                  correctIndex: 1,
-                  explanation: 'When placed at 2F (center of curvature), a convex lens forms an inverted, real image of the identical size at 2F on the opposite side.'
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -815,93 +933,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
               ]
             }
           ]
-        },
-        {
-          id: 'c10-sst-ch2',
-          chapterNumber: 2,
-          title: 'Power Sharing',
-          summary: 'Case studies of Belgium and Sri Lanka, majoritarianism vs power sharing accommodations, forms of power sharing.',
-          keyConcepts: ['Ethnic composition of Belgium', 'Majoritarianism in Sri Lanka (1956 Act)', 'Horizontal vs Vertical Sharing', 'Coalition Governments'],
-          tests: [
-            {
-              id: 't-ps-1',
-              title: 'Test 1: Models of Democratic Governance',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qps-1',
-                  question: 'Which community in Sri Lanka secured official language status through the 1956 Act?',
-                  options: ['Sinhala', 'Tamil', 'Indian Tamil', 'Muslim'],
-                  correctIndex: 0,
-                  explanation: 'In 1956, an Act was passed by the Sri Lankan parliament to recognize Sinhala as the only official language.'
-                },
-                {
-                  id: 'qps-2',
-                  question: 'Separation of powers between Legislature, Executive and Judiciary is an example of:',
-                  options: ['Vertical division of power', 'Horizontal distribution of power', 'Federal system', 'Community government'],
-                  correctIndex: 1,
-                  explanation: 'Horizontal power sharing allows different organs of government placed at the same level to exercise different powers.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c10-english',
-      name: 'English Language & Literature',
-      code: 'ENG-10',
-      category: 'languages',
-      stream: 'General',
-      icon: 'BookOpen',
-      colorScheme: {
-        bg: 'bg-purple-50',
-        border: 'border-purple-200',
-        iconBg: 'bg-purple-600 text-white',
-        iconColor: 'text-purple-700',
-        textColor: 'text-purple-950',
-      },
-      topics: [
-        {
-          id: 'c10-eng-ch1',
-          chapterNumber: 1,
-          title: 'A Letter to God',
-          summary: 'Story of Lencho, a poor hardworking farmer whose crops are destroyed by hailstorm, and his unshakable faith in God.',
-          keyConcepts: ['Lenchos Faith & Irony', 'Postmaster Kindness', 'Human Generosity vs Cynicism', 'Symbolism of Hailstorm'],
-          tests: [
-            {
-              id: 't-eng-1',
-              title: 'Test 1: Comprehension & Character Sketch',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qe-1',
-                  question: 'How much money did Lencho ask for, and how much did he receive?',
-                  options: ['Asked 100 pesos, received 70 pesos', 'Asked 100 pesos, received 50 pesos', 'Asked 50 pesos, received 50 pesos', 'Asked 1000 pesos, received 700 pesos'],
-                  correctIndex: 0,
-                  explanation: 'Lencho asked God for 100 pesos to sow his field again, but the postmaster could gather only 70 pesos.'
-                },
-                {
-                  id: 'qe-2',
-                  question: 'What did Lencho think of the post office employees in his second letter?',
-                  options: ['Angels of God', 'A bunch of crooks', 'Kind helpers', 'Uncaring officials'],
-                  correctIndex: 1,
-                  explanation: 'Lencho suspected that the post office workers stole the missing 30 pesos, ironic given they were the donors.'
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -956,469 +987,10 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
           ]
         }
       ]
-    },
-    {
-      id: 'c10-it',
-      name: 'Information Technology',
-      code: 'IT-402',
-      category: 'core',
-      stream: 'General',
-      icon: 'Laptop',
-      colorScheme: {
-        bg: 'bg-teal-50',
-        border: 'border-teal-200',
-        iconBg: 'bg-teal-600 text-white',
-        iconColor: 'text-teal-700',
-        textColor: 'text-teal-950',
-      },
-      topics: [
-        {
-          id: 'c10-it-ch1',
-          chapterNumber: 1,
-          title: 'Digital Documentation (Advanced)',
-          summary: 'Styles in word processor, inserting & formatting images, table of contents, and mail merge.',
-          keyConcepts: ['Styles and Formatting', 'Mail Merge Data Source', 'Text Wrapping around Graphics', 'Template Customization'],
-          tests: [
-            {
-              id: 't-it-1',
-              title: 'Test 1: Word Processor Automation & Styles',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qit-1',
-                  question: 'Which of the following features allows you to send a personalized letter to multiple recipients automatically?',
-                  options: ['Mail Merge', 'Track Changes', 'Macros', 'AutoCorrect'],
-                  correctIndex: 0,
-                  explanation: 'Mail Merge combines a standard letter document with a recipient data source file to produce personalized output.'
-                },
-                {
-                  id: 'qit-2',
-                  question: 'Which style category formats character properties such as font name, size, bold, and italic in a document?',
-                  options: ['Page Style', 'Character Style', 'Frame Style', 'List Style'],
-                  correctIndex: 1,
-                  explanation: 'Character Styles apply formatting to selected words or blocks of text within a paragraph without affecting the whole paragraph.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  '12': [
-    {
-      id: 'c12-phy',
-      name: 'Physics',
-      code: 'PHY-12',
-      category: 'science',
-      stream: 'Science',
-      icon: 'Atom',
-      colorScheme: {
-        bg: 'bg-sky-50',
-        border: 'border-sky-200',
-        iconBg: 'bg-sky-600 text-white',
-        iconColor: 'text-sky-700',
-        textColor: 'text-sky-950',
-      },
-      topics: [
-        {
-          id: 'c12-p-ch1',
-          chapterNumber: 1,
-          title: 'Electric Charges and Fields',
-          summary: 'Coulomb law, principle of superposition, continuous charge distribution, electric field, electric dipole, Gauss theorem.',
-          keyConcepts: ['Gauss Law & Flux', 'Coulomb Force in Vector Form', 'Dipole in Uniform Electric Field', 'Electric Field lines'],
-          tests: [
-            {
-              id: 't-ecf-1',
-              title: 'Test 1: Coulomb Law & Electric Flux',
-              type: 'diagnostic',
-              badge: 'Diagnostic',
-              questionsCount: 3,
-              durationMinutes: 15,
-              marks: 15,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qp1',
-                  question: 'SI unit of electric flux is:',
-                  options: ['N C⁻¹', 'V m', 'N m C⁻²', 'V m⁻¹'],
-                  correctIndex: 1,
-                  explanation: 'Electric flux Φ = E · A = (N/C) · m² = (V/m) · m² = Volt · meter (V m).'
-                },
-                {
-                  id: 'qp2',
-                  question: 'An electric dipole of moment p placed in a uniform electric field E experiences maximum torque when angle between p and E is:',
-                  options: ['0°', '45°', '90°', '180°'],
-                  correctIndex: 2,
-                  explanation: 'Torque τ = pE sin θ. Maximum torque occurs when sin θ = 1, i.e., θ = 90°.'
-                },
-                {
-                  id: 'qp3',
-                  question: 'Total electric flux through a closed surface enclosing a charge Q in vacuum is:',
-                  options: ['Q / ε₀', 'Q ε₀', '4π Q', 'Zero always'],
-                  correctIndex: 0,
-                  explanation: 'According to Gauss law, total flux Φ = q_enclosed / ε₀.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c12-p-ch3',
-          chapterNumber: 3,
-          title: 'Current Electricity',
-          summary: 'Ohm law, drift velocity, resistivity, temperature dependence, Kirchhoff laws, Wheatstone bridge.',
-          keyConcepts: ['Drift Velocity & Relaxation Time', 'Kirchhoff Voltage & Current Laws', 'Wheatstone Balanced Bridge', 'Internal Resistance of Cell'],
-          tests: [
-            {
-              id: 't-ce-1',
-              title: 'Test 1: Drift Velocity & Circuit Analysis',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qce-1',
-                  question: 'When temperature of a metallic conductor is increased, its electrical conductivity:',
-                  options: ['Increases', 'Decreases', 'Remains constant', 'First increases then decreases'],
-                  correctIndex: 1,
-                  explanation: 'Higher temperature increases collision frequency of free electrons with lattice ions, decreasing relaxation time τ and conductivity.'
-                },
-                {
-                  id: 'qce-2',
-                  question: 'Kirchhoff first rule (junction rule) is based on the conservation of:',
-                  options: ['Energy', 'Electric charge', 'Momentum', 'Mass'],
-                  correctIndex: 1,
-                  explanation: 'Kirchhoff junction rule states total incoming current equals outgoing current, reflecting conservation of electric charge.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-chem',
-      name: 'Chemistry',
-      code: 'CHEM-12',
-      category: 'science',
-      stream: 'Science',
-      icon: 'FlaskConical',
-      colorScheme: {
-        bg: 'bg-emerald-50',
-        border: 'border-emerald-200',
-        iconBg: 'bg-emerald-600 text-white',
-        iconColor: 'text-emerald-700',
-        textColor: 'text-emerald-950',
-      },
-      topics: [
-        {
-          id: 'c12-c-ch1',
-          chapterNumber: 1,
-          title: 'Solutions',
-          summary: 'Types of solutions, Raoult law, colligative properties (elevation in boiling point, depression in freezing point), van\'t Hoff factor.',
-          keyConcepts: ['Henry Law of Gas Solubility', 'Raoult Law of Ideal Solutions', 'Osmotic Pressure & Reverse Osmosis', 'Van\'t Hoff factor (i)'],
-          tests: [
-            {
-              id: 't-sol-1',
-              title: 'Test 1: Colligative Properties & Concentration',
-              type: 'diagnostic',
-              badge: 'Diagnostic',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qsol-1',
-                  question: 'Which of the following concentration terms is independent of temperature?',
-                  options: ['Molarity', 'Molality', 'Normality', 'Formality'],
-                  correctIndex: 1,
-                  explanation: 'Molality is defined per mass of solvent (kg). Since mass does not depend on temperature, molality is temperature-independent.'
-                },
-                {
-                  id: 'qsol-2',
-                  question: 'Van\'t Hoff factor (i) for complete dissociation of BaCl₂ in aqueous solution is:',
-                  options: ['1', '2', '3', '4'],
-                  correctIndex: 2,
-                  explanation: 'BaCl₂ → Ba²⁺ + 2Cl⁻. One molecule yields 3 ions, so i = 3.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-maths',
-      name: 'Mathematics',
-      code: 'MATH-12',
-      category: 'science',
-      stream: 'Science',
-      icon: 'Calculator',
-      colorScheme: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        iconBg: 'bg-amber-600 text-white',
-        iconColor: 'text-amber-700',
-        textColor: 'text-amber-950',
-      },
-      topics: [
-        {
-          id: 'c12-m-ch1',
-          chapterNumber: 1,
-          title: 'Relations and Functions',
-          summary: 'Reflexive, symmetric, transitive relations, equivalence relations, injective, surjective, and bijective mappings.',
-          keyConcepts: ['Equivalence Relations', 'One-One (Injective)', 'Onto (Surjective)', 'Bijective Function Properties'],
-          tests: [
-            {
-              id: 't-rf-1',
-              title: 'Test 1: Relation Types & Bijection',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qrf-1',
-                  question: 'Let R be a relation on the set of natural numbers defined by aRb iff a divides b. Then R is:',
-                  options: ['Equivalence', 'Reflexive & transitive but not symmetric', 'Symmetric & transitive', 'Reflexive only'],
-                  correctIndex: 1,
-                  explanation: 'Any number divides itself (reflexive). If a|b and b|c then a|c (transitive). But 2 divides 4 while 4 does not divide 2 (not symmetric).'
-                },
-                {
-                  id: 'qrf-2',
-                  question: 'The function f: R → R defined by f(x) = 3 - 4x is:',
-                  options: ['One-one and onto (bijective)', 'One-one but not onto', 'Onto but not one-one', 'Neither one-one nor onto'],
-                  correctIndex: 0,
-                  explanation: '3 - 4x1 = 3 - 4x2 => x1 = x2 (one-one). For any real y, x = (3 - y)/4 ∈ R (onto). Hence bijective.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-acc',
-      name: 'Accountancy',
-      code: 'ACC-12',
-      category: 'commerce',
-      stream: 'Commerce',
-      icon: 'Receipt',
-      colorScheme: {
-        bg: 'bg-indigo-50',
-        border: 'border-indigo-200',
-        iconBg: 'bg-indigo-600 text-white',
-        iconColor: 'text-indigo-700',
-        textColor: 'text-indigo-950',
-      },
-      topics: [
-        {
-          id: 'c12-acc-ch1',
-          chapterNumber: 1,
-          title: 'Accounting for Partnership Firms',
-          summary: 'Nature of partnership, partnership deed, profit and loss appropriation, fixed vs fluctuating capital accounts.',
-          keyConcepts: ['Profit & Loss Appropriation', 'Interest on Capital & Drawings', 'Past Adjustments in Accounts', 'Guarantee of Profits'],
-          tests: [
-            {
-              id: 't-acc-1',
-              title: 'Test 1: Partnership Fundamentals',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qa1',
-                  question: 'In the absence of a partnership deed, the rate of interest allowed on partner loan is:',
-                  options: ['6% p.a. simple interest', '10% p.a.', '12% p.a.', 'No interest is paid'],
-                  correctIndex: 0,
-                  explanation: 'According to the Indian Partnership Act 1932, in absence of agreement, interest on partner loan is 6% per annum.'
-                },
-                {
-                  id: 'qa2',
-                  question: 'Where is Interest on Partner Drawings recorded in final partnership accounts?',
-                  options: ['Credit of P&L Appropriation A/c', 'Debit of P&L Appropriation A/c', 'Debit of Cash A/c only', 'Liability side of Balance Sheet'],
-                  correctIndex: 0,
-                  explanation: 'Interest on drawings is an income for the firm and is credited to the Profit and Loss Appropriation Account.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-bst',
-      name: 'Business Studies',
-      code: 'BST-12',
-      category: 'commerce',
-      stream: 'Commerce',
-      icon: 'Briefcase',
-      colorScheme: {
-        bg: 'bg-rose-50',
-        border: 'border-rose-200',
-        iconBg: 'bg-rose-600 text-white',
-        iconColor: 'text-rose-700',
-        textColor: 'text-rose-950',
-      },
-      topics: [
-        {
-          id: 'c12-bst-ch1',
-          chapterNumber: 1,
-          title: 'Nature and Significance of Management',
-          summary: 'Concept, objectives, importance, levels of management, management as art/science/profession, coordination essence.',
-          keyConcepts: ['Effectiveness vs Efficiency', 'Fayol 14 Principles', 'Top, Middle, Lower Management', 'Coordination as Essence'],
-          tests: [
-            {
-              id: 't-bst-1',
-              title: 'Test 1: Core Principles & Management Levels',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qbs1',
-                  question: 'Completing the target on time, regardless of cost, reflects:',
-                  options: ['Efficiency', 'Effectiveness', 'Planning', 'Controlling'],
-                  correctIndex: 1,
-                  explanation: 'Effectiveness is concerned with end results and finishing the given task on time.'
-                },
-                {
-                  id: 'qbs2',
-                  question: 'Which element is considered the unifying thread and the "essence of management"?',
-                  options: ['Staffing', 'Directing', 'Coordination', 'Budgeting'],
-                  correctIndex: 2,
-                  explanation: 'Coordination harmonizes individual efforts towards accomplishment of group goals, making it the essence of management.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-eco',
-      name: 'Economics',
-      code: 'ECO-12',
-      category: 'commerce',
-      stream: 'Commerce',
-      icon: 'TrendingUp',
-      colorScheme: {
-        bg: 'bg-teal-50',
-        border: 'border-teal-200',
-        iconBg: 'bg-teal-600 text-white',
-        iconColor: 'text-teal-700',
-        textColor: 'text-teal-950',
-      },
-      topics: [
-        {
-          id: 'c12-eco-ch1',
-          chapterNumber: 1,
-          title: 'Macroeconomics: National Income Accounting',
-          summary: 'Circular flow of income, aggregates related to national income (GDP, NDP, GNP, NNP), measurement methods.',
-          keyConcepts: ['Value Added Method', 'Income & Expenditure Methods', 'Real vs Nominal GDP', 'GDP Deflator'],
-          tests: [
-            {
-              id: 't-eco-1',
-              title: 'Test 1: National Income Aggregates',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'qe1',
-                  question: 'National Income at factor cost is represented as:',
-                  options: ['GDP_mp', 'NNP_fc', 'NDP_mp', 'GNP_fc'],
-                  correctIndex: 1,
-                  explanation: 'National Income is scientifically defined as Net National Product at factor cost (NNP_fc).'
-                },
-                {
-                  id: 'qe2',
-                  question: 'Real GDP measures output valued at:',
-                  options: ['Current year prices', 'Base year constant prices', 'International dollar rates', 'Future expected prices'],
-                  correctIndex: 1,
-                  explanation: 'Real GDP evaluates physical volume of output using constant base year prices to remove inflation distortion.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c12-hist',
-      name: 'History',
-      code: 'HIST-12',
-      category: 'humanities',
-      stream: 'Humanities',
-      icon: 'Landmark',
-      colorScheme: {
-        bg: 'bg-orange-50',
-        border: 'border-orange-200',
-        iconBg: 'bg-orange-600 text-white',
-        iconColor: 'text-orange-700',
-        textColor: 'text-orange-950',
-      },
-      topics: [
-        {
-          id: 'c12-h-ch1',
-          chapterNumber: 1,
-          title: 'Bricks, Beads and Bones (Harappan Civilisation)',
-          summary: 'Subsistence strategies, architectural layout of Mohenjodaro, craft production, seals, scripts, and decline.',
-          keyConcepts: ['Harappan Town Planning & Drainage', 'The Great Bath Architecture', 'Lothal Dockyard Crafts', 'Script & Weight Standards'],
-          tests: [
-            {
-              id: 't-har-1',
-              title: 'Test 1: Harappan Settlement & Archeology',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'qh1',
-                  question: 'The Great Bath was discovered in which Indus Valley site?',
-                  options: ['Harappa', 'Mohenjodaro', 'Kalibangan', 'Dholavira'],
-                  correctIndex: 1,
-                  explanation: 'The famous monumental Great Bath was excavated in the citadel mound of Mohenjodaro.'
-                },
-                {
-                  id: 'qh2',
-                  question: 'Which stone was predominantly used by Harappans to produce micro-weights?',
-                  options: ['Chert', 'Marble', 'Sandstone', 'Granite'],
-                  correctIndex: 0,
-                  explanation: 'Harappan cubical weights were crafted precisely from chert stones with binary grading.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   '6': [
+    createEnglishGrammarSubject('6'),
     {
       id: 'c6-maths',
       name: 'Mathematics',
@@ -1464,41 +1036,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['LXXIX', 'LXXVIIII', 'XXCIX', 'LXIX'],
                   correctIndex: 0,
                   explanation: '79 = 70 + 9 = (50 + 10 + 10) + (10 - 1) = LXX + IX = LXXIX.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c6-m-ch2',
-          chapterNumber: 2,
-          title: 'Whole Numbers',
-          summary: 'Predecessor, successor, number line representation, properties of whole numbers (closure, commutative, associative, distributive).',
-          keyConcepts: ['Natural vs Whole Numbers', 'Addition on Number Line', 'Distributive Property', 'Identity for Multiplications'],
-          tests: [
-            {
-              id: 't-c6-m2',
-              title: 'Test 1: Whole Number Properties',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q6m2-1',
-                  question: 'The smallest whole number is:',
-                  options: ['0', '1', '-1', 'None of these'],
-                  correctIndex: 0,
-                  explanation: 'Whole numbers start from 0: {0, 1, 2, 3...}. Thus 0 is the smallest whole number.'
-                },
-                {
-                  id: 'q6m2-2',
-                  question: 'What is the multiplicative identity for whole numbers?',
-                  options: ['0', '1', '2', '-1'],
-                  correctIndex: 1,
-                  explanation: 'Multiplying any whole number a by 1 gives a × 1 = a. Hence 1 is the multiplicative identity.'
                 }
               ]
             }
@@ -1609,113 +1146,10 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
           ]
         }
       ]
-    },
-    {
-      id: 'c6-eng',
-      name: 'English',
-      code: 'ENG-6',
-      category: 'languages',
-      stream: 'General',
-      icon: 'BookOpen',
-      colorScheme: {
-        bg: 'bg-rose-50',
-        border: 'border-rose-200',
-        iconBg: 'bg-rose-600 text-white',
-        iconColor: 'text-rose-700',
-        textColor: 'text-rose-950',
-      },
-      topics: [
-        {
-          id: 'c6-eng-ch1',
-          chapterNumber: 1,
-          title: 'Who Did Patrick\'s Homework?',
-          summary: 'A delightful tale about young Patrick who hated homework and found a tiny elf who made him study and learn by himself.',
-          keyConcepts: ['Self Help & Diligence', 'Character Growth of Patrick', 'Story Moral', 'Vocabulary Building'],
-          tests: [
-            {
-              id: 't-c6-e1',
-              title: 'Test 1: Reading Comprehension',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q6e1',
-                  question: 'Who actually did Patrick\'s homework in the end?',
-                  options: ['The tiny elf', 'Patrick himself', 'Patrick\'s mother', 'His teachers'],
-                  correctIndex: 1,
-                  explanation: 'Patrick had to look up words, do calculations, and read books to guide the elf, so Patrick did his own homework.'
-                },
-                {
-                  id: 'q6e2',
-                  question: 'What game did Patrick prefer playing instead of homework?',
-                  options: ['Hockey, basketball and Nintendo', 'Chess and carrom', 'Cricket and football', 'Badminton'],
-                  correctIndex: 0,
-                  explanation: 'Patrick loved playing hockey, basketball, and Nintendo video games.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c6-hin',
-      name: 'Hindi',
-      code: 'HIN-6',
-      category: 'languages',
-      stream: 'General',
-      icon: 'Languages',
-      colorScheme: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        iconBg: 'bg-amber-600 text-white',
-        iconColor: 'text-amber-700',
-        textColor: 'text-amber-950',
-      },
-      topics: [
-        {
-          id: 'c6-h-ch1',
-          chapterNumber: 1,
-          title: 'वह चिड़िया जो (कविता)',
-          summary: 'केदारनाथ अग्रवाल द्वारा रचित कविता, नीले पंखों वाली संतोषी चिड़िया का प्रकृति और नदी के जल से प्रेम।',
-          keyConcepts: ['कविता का भावार्थ', 'प्रकृति प्रेम', 'संतोषी स्वभाव', 'शब्दार्थ एवं तुकांत शब्द'],
-          tests: [
-            {
-              id: 't-c6-h1',
-              title: 'Test 1: कविता भावार्थ एवं प्रश्नोत्तरी',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q6h1',
-                  question: 'नीले पंखों वाली चिड़िया को किससे बहुत प्यार है?',
-                  options: ['अन्न और नदी से', 'सोने के पिंजरे से', 'मिठाई से', 'खिलौनों से'],
-                  correctIndex: 0,
-                  explanation: 'कविता में चिड़िया को ज्वार के दाने (अन्न) और उफनती नदी के जल से अत्यंत प्रेम है।'
-                },
-                {
-                  id: 'q6h2',
-                  question: 'कविता "वह चिड़िया जो" के कवि कौन हैं?',
-                  options: ['केदारनाथ अग्रवाल', 'सूर्यकांत त्रिपाठी निराला', 'सुमित्रानंदन पंत', 'महादेवी वर्मा'],
-                  correctIndex: 0,
-                  explanation: 'इस कविता के रचयिता केदारनाथ अग्रवाल हैं।'
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   '7': [
+    createEnglishGrammarSubject('7'),
     {
       id: 'c7-maths',
       name: 'Mathematics',
@@ -1761,41 +1195,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['18', '0', '-1', '1/18'],
                   correctIndex: 0,
                   explanation: 'Additive inverse of -a is a because (-18) + 18 = 0.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c7-m-ch2',
-          chapterNumber: 2,
-          title: 'Fractions and Decimals',
-          summary: 'Multiplication and division of proper, improper, mixed fractions and decimal numbers.',
-          keyConcepts: ['Reciprocal of Fractions', 'Decimal Point Shifts', 'Word Problems', 'Fraction Product Rules'],
-          tests: [
-            {
-              id: 't-c7-m2',
-              title: 'Test 1: Fraction & Decimal Mastery',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q7m2-1',
-                  question: 'Divide: 2/5 ÷ 1/2 =',
-                  options: ['4/5', '1/5', '5/4', '1/10'],
-                  correctIndex: 0,
-                  explanation: '2/5 ÷ 1/2 = 2/5 × 2/1 = 4/5.'
-                },
-                {
-                  id: 'q7m2-2',
-                  question: '0.2 × 0.3 =',
-                  options: ['0.06', '0.6', '6.0', '0.006'],
-                  correctIndex: 0,
-                  explanation: '2 × 3 = 6. With two total decimal places, the answer is 0.06.'
                 }
               ]
             }
@@ -1854,113 +1253,10 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
           ]
         }
       ]
-    },
-    {
-      id: 'c7-sst',
-      name: 'Social Science',
-      code: 'SST-7',
-      category: 'core',
-      stream: 'General',
-      icon: 'Globe',
-      colorScheme: {
-        bg: 'bg-purple-50',
-        border: 'border-purple-200',
-        iconBg: 'bg-purple-600 text-white',
-        iconColor: 'text-purple-700',
-        textColor: 'text-purple-950',
-      },
-      topics: [
-        {
-          id: 'c7-sst-ch1',
-          chapterNumber: 1,
-          title: 'Environment & Earth Interiors',
-          summary: 'Natural and human-made environment, crust, mantle, core, types of rocks (igneous, sedimentary, metamorphic).',
-          keyConcepts: ['Biosphere Harmony', 'Crust SIAL & SIMA', 'Rock Cycle Transformation', 'Magma Extrusive vs Intrusive'],
-          tests: [
-            {
-              id: 't-c7-sst1',
-              title: 'Test 1: Geological Layers & Environment',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q7sst1',
-                  question: 'The innermost layer of the earth is known as:',
-                  options: ['Core (NIFE)', 'Mantle', 'Crust', 'Lithosphere'],
-                  correctIndex: 0,
-                  explanation: 'The core is the innermost layer made predominantly of nickel and iron (NIFE).'
-                },
-                {
-                  id: 'q7sst2',
-                  question: 'Rocks formed by cooling of molten magma are called:',
-                  options: ['Igneous rocks', 'Sedimentary rocks', 'Metamorphic rocks', 'Fossil rocks'],
-                  correctIndex: 0,
-                  explanation: 'Igneous rocks (from Latin "ignis" meaning fire) are formed when magma solidifies.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'c7-eng',
-      name: 'English',
-      code: 'ENG-7',
-      category: 'languages',
-      stream: 'General',
-      icon: 'BookOpen',
-      colorScheme: {
-        bg: 'bg-rose-50',
-        border: 'border-rose-200',
-        iconBg: 'bg-rose-600 text-white',
-        iconColor: 'text-rose-700',
-        textColor: 'text-rose-950',
-      },
-      topics: [
-        {
-          id: 'c7-eng-ch1',
-          chapterNumber: 1,
-          title: 'Three Questions (Leo Tolstoy)',
-          summary: 'A king seeks answers to three essential life questions: right time to do things, right people to listen to, and what is most important.',
-          keyConcepts: ['Right Time is NOW', 'The Most Important Person', 'Doing Good to Others', 'The Wise Hermit Wisdom'],
-          tests: [
-            {
-              id: 't-c7-e1',
-              title: 'Test 1: Theme & Life Lesson',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q7e1',
-                  question: 'According to the hermit, the most important time is always:',
-                  options: ['Now (Present moment)', 'Tomorrow', 'Past', 'When consulting scholars'],
-                  correctIndex: 0,
-                  explanation: 'The hermit teaches that NOW is the only time we have any power over.'
-                },
-                {
-                  id: 'q7e2',
-                  question: 'Whom did the king help that turned out to be an enemy seeking revenge?',
-                  options: ['A bearded wounded man', 'A royal soldier', 'A traveling merchant', 'The village chief'],
-                  correctIndex: 0,
-                  explanation: 'The king cleaned and bandaged the wounds of a bearded man, who was his enemy turned friend.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   '8': [
+    createEnglishGrammarSubject('8'),
     {
       id: 'c8-maths',
       name: 'Mathematics',
@@ -2006,41 +1302,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['Rational number', 'Irrational number', 'Natural number only', 'Integer only'],
                   correctIndex: 0,
                   explanation: 'Rational numbers are closed under multiplication.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c8-m-ch2',
-          chapterNumber: 2,
-          title: 'Linear Equations in One Variable',
-          summary: 'Solving linear equations with variables on one side, variables on both sides, and real world applications.',
-          keyConcepts: ['Transposition Method', 'Cross Multiplication', 'Age & Perimeter word problems', 'Simplifying expressions'],
-          tests: [
-            {
-              id: 't-c8-m2',
-              title: 'Test 1: Equation Solving Techniques',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q8m2-1',
-                  question: 'Solve for x: 5x + 9 = 5 + 3x:',
-                  options: ['-2', '2', '7', '-7'],
-                  correctIndex: 0,
-                  explanation: '5x - 3x = 5 - 9 => 2x = -4 => x = -2.'
-                },
-                {
-                  id: 'q8m2-2',
-                  question: 'The perimeter of a rectangle is 13 cm and width is 2¾ cm. Find its length:',
-                  options: ['3¾ cm', '4½ cm', '3½ cm', '2½ cm'],
-                  correctIndex: 0,
-                  explanation: '2(l + 11/4) = 13 => l + 11/4 = 13/2 = 26/4 => l = 15/4 = 3¾ cm.'
                 }
               ]
             }
@@ -2099,61 +1360,10 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
           ]
         }
       ]
-    },
-    {
-      id: 'c8-sst',
-      name: 'Social Science',
-      code: 'SST-8',
-      category: 'core',
-      stream: 'General',
-      icon: 'Globe',
-      colorScheme: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        iconBg: 'bg-amber-600 text-white',
-        iconColor: 'text-amber-700',
-        textColor: 'text-amber-950',
-      },
-      topics: [
-        {
-          id: 'c8-sst-ch1',
-          chapterNumber: 1,
-          title: 'From Trade to Territory (The East India Company)',
-          summary: 'Mercantilism, Battle of Plassey (1757), Battle of Buxar (1764), Subsidiary Alliance, Doctrine of Lapse.',
-          keyConcepts: ['Robert Clive & Mir Jafar', 'Diwani rights of Bengal', 'Lord Dalhousie Annexations', 'Sepoy Army Reorganization'],
-          tests: [
-            {
-              id: 't-c8-sst1',
-              title: 'Test 1: Colonial Expansion Milestones',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q8sst1',
-                  question: 'In which year was the historic Battle of Plassey fought?',
-                  options: ['1757', '1764', '1857', '1707'],
-                  correctIndex: 0,
-                  explanation: 'The Battle of Plassey took place in 1757, marking British East India Company territorial foothold.'
-                },
-                {
-                  id: 'q8sst2',
-                  question: 'Who introduced the Doctrine of Lapse policy in India?',
-                  options: ['Lord Dalhousie', 'Lord Wellesley', 'Warren Hastings', 'Lord Cornwallis'],
-                  correctIndex: 0,
-                  explanation: 'Governor-General Lord Dalhousie devised the Doctrine of Lapse to annex kingdoms without natural heirs.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   '9': [
+    createEnglishGrammarSubject('9'),
     {
       id: 'c9-maths',
       name: 'Mathematics',
@@ -2199,41 +1409,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['1/2', '2', '-2', '1/64'],
                   correctIndex: 0,
                   explanation: '64 = 2⁶. (2⁶)⁻¹/⁶ = 2⁻¹ = 1/2.'
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 'c9-m-ch2',
-          chapterNumber: 2,
-          title: 'Polynomials',
-          summary: 'Polynomials in one variable, zeroes of a polynomial, Remainder Theorem, Factor Theorem, algebraic identities.',
-          keyConcepts: ['Identity: (x+y+z)²', 'Identity: x³ + y³ + z³ - 3xyz', 'Factor Theorem Proof', 'Splitting the Middle Term'],
-          tests: [
-            {
-              id: 't-c9-m2',
-              title: 'Test 1: Algebraic Identities & Factorization',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'q9m2-1',
-                  question: 'If x + y + z = 0, then x³ + y³ + z³ is equal to:',
-                  options: ['3xyz', '0', 'xyz', '3(x+y+z)'],
-                  correctIndex: 0,
-                  explanation: 'From the identity: x³ + y³ + z³ - 3xyz = (x+y+z)(x²+y²+z²-xy-yz-zx). When x+y+z=0, x³+y³+z³ = 3xyz.'
-                },
-                {
-                  id: 'q9m2-2',
-                  question: 'Degree of the constant non-zero polynomial is:',
-                  options: ['0', '1', 'Undefined', 'Any integer'],
-                  correctIndex: 0,
-                  explanation: 'Any non-zero constant k can be written as k · x⁰, so its degree is 0.'
                 }
               ]
             }
@@ -2292,61 +1467,10 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
           ]
         }
       ]
-    },
-    {
-      id: 'c9-sst',
-      name: 'Social Science',
-      code: 'SST-9',
-      category: 'core',
-      stream: 'General',
-      icon: 'Globe',
-      colorScheme: {
-        bg: 'bg-sky-50',
-        border: 'border-sky-200',
-        iconBg: 'bg-sky-600 text-white',
-        iconColor: 'text-sky-700',
-        textColor: 'text-sky-950',
-      },
-      topics: [
-        {
-          id: 'c9-sst-ch1',
-          chapterNumber: 1,
-          title: 'The French Revolution',
-          summary: 'French society during 18th century, outbreak of revolution, constitutional monarchy, Reign of Terror, abolition of slavery.',
-          keyConcepts: ['Storming of the Bastille 1789', 'Three Estates Hierarchy', 'Declaration of Rights of Man', 'Robespierre Jacobin Rule'],
-          tests: [
-            {
-              id: 't-c9-sst1',
-              title: 'Test 1: French Revolution Key Events',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 10,
-              marks: 10,
-              difficulty: 'Easy',
-              questions: [
-                {
-                  id: 'q9sst1',
-                  question: 'On 14th July 1789, the people of Paris stormed which fortress-prison?',
-                  options: ['Bastille', 'Versailles', 'Tuileries', 'Louvre'],
-                  correctIndex: 0,
-                  explanation: 'The fortress-prison Bastille symbolized the despotic power of the French monarch and was stormed on July 14, 1789.'
-                },
-                {
-                  id: 'q9sst2',
-                  question: 'The patriotic song "Marseillaise" sung by French volunteers was composed by:',
-                  options: ['Roget de L\'Isle', 'Rousseau', 'Voltaire', 'Montesquieu'],
-                  correctIndex: 0,
-                  explanation: 'The poet Roget de L\'Isle composed "Marseillaise", which became the national anthem of France.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   '11': [
+    createEnglishGrammarSubject('11'),
     {
       id: 'c11-phy',
       name: 'Physics',
@@ -2452,58 +1576,6 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
       ]
     },
     {
-      id: 'c11-maths',
-      name: 'Mathematics',
-      code: 'MATH-11',
-      category: 'science',
-      stream: 'Science',
-      icon: 'Calculator',
-      colorScheme: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        iconBg: 'bg-amber-600 text-white',
-        iconColor: 'text-amber-700',
-        textColor: 'text-amber-950',
-      },
-      topics: [
-        {
-          id: 'c11-m-ch1',
-          chapterNumber: 1,
-          title: 'Sets',
-          summary: 'Sets and their representations, empty set, finite and infinite sets, subsets, power set, universal set, Venn diagrams.',
-          keyConcepts: ['Union and Intersection', 'De Morgan Laws', 'Power Set cardinality 2ⁿ', 'Difference of Sets'],
-          tests: [
-            {
-              id: 't-c11-m1',
-              title: 'Test 1: Set Operations & Power Sets',
-              type: 'concept',
-              badge: 'Chapter Test',
-              questionsCount: 2,
-              durationMinutes: 15,
-              marks: 10,
-              difficulty: 'Medium',
-              questions: [
-                {
-                  id: 'q11m1',
-                  question: 'If a set A has 4 elements, how many elements does its power set P(A) contain?',
-                  options: ['16', '8', '4', '32'],
-                  correctIndex: 0,
-                  explanation: 'Cardinality of power set is 2ⁿ = 2⁴ = 16.'
-                },
-                {
-                  id: 'q11m2',
-                  question: 'According to De Morgan Law, (A ∪ B)\' is equal to:',
-                  options: ['A\' ∩ B\'', 'A\' ∪ B\'', 'A ∩ B', 'A\' - B\''],
-                  correctIndex: 0,
-                  explanation: 'The complement of the union is the intersection of their complements: (A ∪ B)\' = A\' ∩ B\'.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
       id: 'c11-acc',
       name: 'Accountancy',
       code: 'ACC-11',
@@ -2548,6 +1620,172 @@ export const SUBJECTS_BY_CLASS: Record<string, Subject[]> = {
                   options: ['Business Entity concept', 'Money Measurement concept', 'Going Concern concept', 'Consistency concept'],
                   correctIndex: 0,
                   explanation: 'The Business Entity assumption treats the enterprise as a separate legal and accounting entity distinct from owners.'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  '12': [
+    createEnglishGrammarSubject('12'),
+    {
+      id: 'c12-phy',
+      name: 'Physics',
+      code: 'PHY-12',
+      category: 'science',
+      stream: 'Science',
+      icon: 'Atom',
+      colorScheme: {
+        bg: 'bg-sky-50',
+        border: 'border-sky-200',
+        iconBg: 'bg-sky-600 text-white',
+        iconColor: 'text-sky-700',
+        textColor: 'text-sky-950',
+      },
+      topics: [
+        {
+          id: 'c12-p-ch1',
+          chapterNumber: 1,
+          title: 'Electric Charges and Fields',
+          summary: 'Coulomb law, principle of superposition, continuous charge distribution, electric field, electric dipole, Gauss theorem.',
+          keyConcepts: ['Gauss Law & Flux', 'Coulomb Force in Vector Form', 'Dipole in Uniform Electric Field', 'Electric Field lines'],
+          tests: [
+            {
+              id: 't-ecf-1',
+              title: 'Test 1: Coulomb Law & Electric Flux',
+              type: 'diagnostic',
+              badge: 'Diagnostic',
+              questionsCount: 3,
+              durationMinutes: 15,
+              marks: 15,
+              difficulty: 'Medium',
+              questions: [
+                {
+                  id: 'qp1',
+                  question: 'SI unit of electric flux is:',
+                  options: ['N C⁻¹', 'V m', 'N m C⁻²', 'V m⁻¹'],
+                  correctIndex: 1,
+                  explanation: 'Electric flux Φ = E · A = (N/C) · m² = (V/m) · m² = Volt · meter (V m).'
+                },
+                {
+                  id: 'qp2',
+                  question: 'An electric dipole of moment p placed in a uniform electric field E experiences maximum torque when angle between p and E is:',
+                  options: ['0°', '45°', '90°', '180°'],
+                  correctIndex: 2,
+                  explanation: 'Torque τ = pE sin θ. Maximum torque occurs when sin θ = 1, i.e., θ = 90°.'
+                },
+                {
+                  id: 'qp3',
+                  question: 'Total electric flux through a closed surface enclosing a charge Q in vacuum is:',
+                  options: ['Q / ε₀', 'Q ε₀', '4π Q', 'Zero always'],
+                  correctIndex: 0,
+                  explanation: 'According to Gauss law, total flux Φ = q_enclosed / ε₀.'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'c12-chem',
+      name: 'Chemistry',
+      code: 'CHEM-12',
+      category: 'science',
+      stream: 'Science',
+      icon: 'FlaskConical',
+      colorScheme: {
+        bg: 'bg-emerald-50',
+        border: 'border-emerald-200',
+        iconBg: 'bg-emerald-600 text-white',
+        iconColor: 'text-emerald-700',
+        textColor: 'text-emerald-950',
+      },
+      topics: [
+        {
+          id: 'c12-c-ch1',
+          chapterNumber: 1,
+          title: 'Solutions',
+          summary: 'Types of solutions, Raoult law, colligative properties (elevation in boiling point, depression in freezing point), van\'t Hoff factor.',
+          keyConcepts: ['Henry Law of Gas Solubility', 'Raoult Law of Ideal Solutions', 'Osmotic Pressure & Reverse Osmosis', 'Van\'t Hoff factor (i)'],
+          tests: [
+            {
+              id: 't-sol-1',
+              title: 'Test 1: Colligative Properties & Concentration',
+              type: 'diagnostic',
+              badge: 'Diagnostic',
+              questionsCount: 2,
+              durationMinutes: 15,
+              marks: 10,
+              difficulty: 'Medium',
+              questions: [
+                {
+                  id: 'qsol-1',
+                  question: 'Which of the following concentration terms is independent of temperature?',
+                  options: ['Molarity', 'Molality', 'Normality', 'Formality'],
+                  correctIndex: 1,
+                  explanation: 'Molality is defined per mass of solvent (kg). Since mass does not depend on temperature, molality is temperature-independent.'
+                },
+                {
+                  id: 'qsol-2',
+                  question: 'Van\'t Hoff factor (i) for complete dissociation of BaCl₂ in aqueous solution is:',
+                  options: ['1', '2', '3', '4'],
+                  correctIndex: 2,
+                  explanation: 'BaCl₂ → Ba²⁺ + 2Cl⁻. One molecule yields 3 ions, so i = 3.'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'c12-acc',
+      name: 'Accountancy',
+      code: 'ACC-12',
+      category: 'commerce',
+      stream: 'Commerce',
+      icon: 'Receipt',
+      colorScheme: {
+        bg: 'bg-indigo-50',
+        border: 'border-indigo-200',
+        iconBg: 'bg-indigo-600 text-white',
+        iconColor: 'text-indigo-700',
+        textColor: 'text-indigo-950',
+      },
+      topics: [
+        {
+          id: 'c12-acc-ch1',
+          chapterNumber: 1,
+          title: 'Accounting for Partnership Firms',
+          summary: 'Nature of partnership, partnership deed, profit and loss appropriation, fixed vs fluctuating capital accounts.',
+          keyConcepts: ['Profit & Loss Appropriation', 'Interest on Capital & Drawings', 'Past Adjustments in Accounts', 'Guarantee of Profits'],
+          tests: [
+            {
+              id: 't-acc-1',
+              title: 'Test 1: Partnership Fundamentals',
+              type: 'concept',
+              badge: 'Chapter Test',
+              questionsCount: 2,
+              durationMinutes: 15,
+              marks: 10,
+              difficulty: 'Easy',
+              questions: [
+                {
+                  id: 'qa1',
+                  question: 'In the absence of a partnership deed, the rate of interest allowed on partner loan is:',
+                  options: ['6% p.a. simple interest', '10% p.a.', '12% p.a.', 'No interest is paid'],
+                  correctIndex: 0,
+                  explanation: 'According to the Indian Partnership Act 1932, in absence of agreement, interest on partner loan is 6% per annum.'
+                },
+                {
+                  id: 'qa2',
+                  question: 'Where is Interest on Partner Drawings recorded in final partnership accounts?',
+                  options: ['Credit of P&L Appropriation A/c', 'Debit of P&L Appropriation A/c', 'Debit of Cash A/c only', 'Liability side of Balance Sheet'],
+                  correctIndex: 0,
+                  explanation: 'Interest on drawings is an income for the firm and is credited to the Profit and Loss Appropriation Account.'
                 }
               ]
             }

@@ -53,7 +53,7 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
-  category: 'core' | 'science' | 'commerce' | 'humanities' | 'languages';
+  category: 'core' | 'science' | 'commerce' | 'humanities' | 'languages' | 'grammar';
   stream?: 'Science' | 'Commerce' | 'Humanities' | 'General';
   icon: string;
   colorScheme: {
@@ -72,4 +72,29 @@ export interface ActiveTestState {
   subjectName: string;
   className: string;
   test: TopicTest;
+}
+
+export interface UserTestRecord {
+  id: string;
+  testId: string;
+  testTitle: string;
+  subjectName: string;
+  className: string;
+  chapterTitle: string;
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  date: string;
+  timeSpentMinutes: number;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  mobile: string;
+  email: string;
+  currentClass: ClassLevel;
+  avatarColor: string;
+  joinedDate: string;
+  testHistory: UserTestRecord[];
 }

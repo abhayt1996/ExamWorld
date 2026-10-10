@@ -18,9 +18,14 @@ import { ActiveTestState, Question } from '../types';
 interface TestRunnerModalProps {
   testState: ActiveTestState;
   onClose: () => void;
+  onRecordTestCompleted?: (score: number, totalMarks: number, percentage: number) => void;
 }
 
-export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({ testState, onClose }) => {
+export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
+  testState,
+  onClose,
+  onRecordTestCompleted,
+}) => {
   const { test, topicTitle, chapterNumber, subjectName, className } = testState;
   const questions: Question[] = test.questions;
 
@@ -74,6 +79,17 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({ testState, onC
 
   const handleSubmit = () => {
     setIsSubmitted(true);
+    let correct = 0;
+    questions.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.correctIndex) {
+        correct++;
+      }
+    });
+    const earned = Math.round((correct / questions.length) * test.marks);
+    const pct = Math.round((correct / questions.length) * 100);
+    if (onRecordTestCompleted) {
+      onRecordTestCompleted(earned, test.marks, pct);
+    }
   };
 
   const handleRetake = () => {

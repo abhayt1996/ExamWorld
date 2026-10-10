@@ -3,30 +3,32 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
-  FileText,
   Clock,
   Award,
-  CheckCircle,
   Play,
-  Sparkles,
   BookMarked,
   HelpCircle,
   Zap,
+  Lock,
 } from 'lucide-react';
 import { Subject, ChapterTopic, TopicTest } from '../types';
 
 interface TopicsViewProps {
   className: string;
   subject: Subject;
+  isLoggedIn: boolean;
   onBackToSubjects: () => void;
   onStartTest: (topic: ChapterTopic, test: TopicTest) => void;
+  onRequestLoginForTest: (topic: ChapterTopic, test: TopicTest) => void;
 }
 
 export const TopicsView: React.FC<TopicsViewProps> = ({
   className,
   subject,
+  isLoggedIn,
   onBackToSubjects,
   onStartTest,
+  onRequestLoginForTest,
 }) => {
   // Store expanded chapter IDs in state. Default expand chapter 1 for immediate demonstrability!
   const [expandedTopicIds, setExpandedTopicIds] = useState<string[]>(() => {
@@ -46,6 +48,16 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
   const collapseAll = () => {
     setExpandedTopicIds([]);
   };
+
+  const handleTestClick = (topic: ChapterTopic, test: TopicTest) => {
+    if (!isLoggedIn) {
+      onRequestLoginForTest(topic, test);
+    } else {
+      onStartTest(topic, test);
+    }
+  };
+
+  const isEnglishGrammar = subject.name.toLowerCase().includes('grammar');
 
   return (
     <div className="w-full">
@@ -93,13 +105,15 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#E8DCB] text-[#715440] text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Code: {subject.code}</span>
               <span>·</span>
-              <span>{subject.stream || 'General'} Curriculum</span>
+              <span>{isEnglishGrammar ? 'Standard NCERT Grammar Syllabus' : `${subject.stream || 'General'} Curriculum`}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-heading font-extrabold text-[#2F241C] tracking-tight">
               {subject.name} — Chapter Modules & Tests
             </h1>
             <p className="text-xs sm:text-sm text-[#705E4F] mt-1.5 font-medium max-w-2xl">
-              Click any full-width chapter bar below to expand diagnostic assessments, chapter quizzes, and comprehensive mock tests.
+              {isEnglishGrammar
+                ? 'Comprehensive NCERT English Grammar concepts across all chapters: Parts of Speech, Tenses, Voice, Speech, Modals, Determiners, Clauses & Concord.'
+                : 'Click any full-width chapter bar below to expand diagnostic assessments, chapter quizzes, and comprehensive mock tests.'}
             </p>
           </div>
 
@@ -115,7 +129,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
               <span className="block text-xl font-heading font-black text-[#D46244]">
                 {subject.topics.reduce((acc, t) => acc + t.tests.length, 0)}
               </span>
-              <span className="text-[11px] font-semibold text-[#8C7A6B]">Practice Tests</span>
+              <span className="text-[11px] font-semibold text-[#8C7A6B]">Tests Available</span>
             </div>
           </div>
         </div>
@@ -155,7 +169,6 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
               >
                 {/* Left Side: Chapter Number & Title */}
                 <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
-                  {/* Chapter badge */}
                   <span className="shrink-0 px-3 py-1.5 rounded-xl bg-[#E2D4C2] text-[#4A3728] font-heading font-extrabold text-xs sm:text-sm tracking-tight border border-[#D5C4AF]">
                     Chapter {topic.chapterNumber}
                   </span>
@@ -280,18 +293,34 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Interactive Start Test Button */}
+                        {/* Interactive Start Test Button (with Auth gate check) */}
                         <div className="mt-4 pt-3 border-t border-[#F1E9DE] flex items-center justify-between">
                           <span className="text-[11px] text-[#8C7A6B] font-medium">
                             Immediate Score & Solution
                           </span>
 
                           <button
-                            onClick={() => onStartTest(topic, test)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm"
+                            onClick={() => handleTestClick(topic, test)}
+                            className={`
+                              inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm
+                              ${
+                                isLoggedIn
+                                  ? 'bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white'
+                                  : 'bg-[#4A3728] hover:bg-[#3D2C1E] active:bg-[#322317] text-white'
+                              }
+                            `}
                           >
-                            <Play className="w-3.5 h-3.5 fill-white" />
-                            <span>Start Test</span>
+                            {isLoggedIn ? (
+                              <>
+                                <Play className="w-3.5 h-3.5 fill-white" />
+                                <span>Start Test</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-3.5 h-3.5" />
+                                <span>Login to Start</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
