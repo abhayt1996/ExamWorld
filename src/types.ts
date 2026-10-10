@@ -115,6 +115,13 @@ export interface UserProfile {
 
 export type GradeStatusMap = Record<ClassLevel, boolean>;
 
+export interface DisabledEntitiesMap {
+  grades: Record<ClassLevel, boolean>;
+  subjects: Record<string, boolean>; // `${classId}:${subjectId}` -> false = disabled
+  topics: Record<string, boolean>;   // topicId -> false = disabled
+  tests: Record<string, boolean>;    // testId -> false = disabled
+}
+
 export interface StudentEnrollmentRecord {
   id: string;
   name: string;

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ClassSelectionView } from './components/ClassSelectionView';
 import { SubjectSelectionView } from './components/SubjectSelectionView';
@@ -19,6 +19,7 @@ import {
   INITIAL_USER_PROFILE,
   INITIAL_ADMIN_PROFILE,
   DEFAULT_GRADE_STATUS,
+  SUBJECTS_BY_CLASS,
 } from './data/curriculumData';
 import {
   ClassLevel,
@@ -28,8 +29,16 @@ import {
   ActiveTestState,
   UserProfile,
   UserTestRecord,
-  GradeStatusMap,
+  DisabledEntitiesMap,
 } from './types';
+import {
+  createAuthSession,
+  getActiveAuthSession,
+  clearAuthSession,
+  executeRouteGuard,
+  secureVault,
+} from './utils/security';
+import { ShieldAlert } from 'lucide-react';
 
 export default function App() {
   const [activeView, setActiveView] = useState<'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard'>('classes');
@@ -41,9 +50,24 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile>(INITIAL_USER_PROFILE);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
-  // Admin Master State
+  // Security Route Guard Alert Banner
+  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
+
+  // Hierarchical Availability State (Grades, Subjects, Topics, Tests)
+  const [disabledEntities, setDisabledEntities] = useState<DisabledEntitiesMap>(() => ({
+    grades: { ...DEFAULT_GRADE_STATUS },
+    subjects: {},
+    topics: {},
+    tests: {},
+  }));
+
+  // Reactive Curriculum Store allowing dynamic additions, deletions, and edits
+  const [curriculumStore, setCurriculumStore] = useState<Record<string, Subject[]>>(() => ({
+    ...SUBJECTS_BY_CLASS,
+  }));
+
+  // Admin Master Password State
   const [adminPassword, setAdminPassword] = useState<string>('12345');
-  const [gradeStatus, setGradeStatus] = useState<GradeStatusMap>(DEFAULT_GRADE_STATUS);
 
   // Test Runner State & Pending test queue for login prompt
   const [activeTestState, setActiveTestState] = useState<ActiveTestState | null>(null);
@@ -52,28 +76,69 @@ export default function App() {
     test: TopicTest;
   } | null>(null);
 
-  // Navigate to Subject Selection View
-  const handleSelectClass = (classId: ClassLevel) => {
-    // If grade is disabled and user is not admin, prevent access
-    if (gradeStatus[classId] === false && !(isLoggedIn && userProfile.role === 'admin')) {
+  // Check existing session token on mount (Strict Client-Side Route Guard initialization)
+  useEffect(() => {
+    const existingSession = getActiveAuthSession();
+    if (existingSession) {
+      setIsLoggedIn(true);
+      if (existingSession.role === 'admin') {
+        setUserProfile(INITIAL_ADMIN_PROFILE);
+      } else {
+        setUserProfile((prev) => ({
+          ...prev,
+          name: existingSession.name || prev.name,
+          mobile: existingSession.identifier || prev.mobile,
+          role: 'student',
+        }));
+      }
+    }
+  }, []);
+
+  // Safe navigation with client-side Route Guard middleware
+  const navigateToView = (
+    targetView: 'classes' | 'subjects' | 'topics' | 'profile' | 'dashboard',
+    targetIsAdmin = false
+  ) => {
+    const guard = executeRouteGuard(targetView, targetIsAdmin);
+
+    if (!guard.allowed) {
+      setActiveView(guard.targetView);
+      if (guard.securityMessage) {
+        setSecurityNotice(guard.securityMessage);
+        setTimeout(() => setSecurityNotice(null), 4000);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+
+    setActiveView(targetView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Navigate to Subject Selection View
+  const handleSelectClass = (classId: ClassLevel) => {
+    // Check if grade is disabled and user is not admin
+    const isAdmin = isLoggedIn && userProfile.role === 'admin';
+    if (disabledEntities.grades[classId] === false && !isAdmin) {
+      setSecurityNotice(`Class ${classId} is temporarily disabled by administrator.`);
+      setTimeout(() => setSecurityNotice(null), 3000);
+      return;
+    }
+
     setSelectedClassId(classId);
     setSelectedSubject(null);
-    setActiveView('subjects');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToView('subjects');
   };
 
   // Back to Class Selection View
   const handleBackToClasses = () => {
-    setActiveView('classes');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToView('classes');
   };
 
   // Scroll directly down to Class Selection Grid (Grades 6-12)
   const handleScrollToGrades = () => {
     if (activeView !== 'classes') {
-      setActiveView('classes');
+      navigateToView('classes');
       setTimeout(() => {
         const gridElem = document.getElementById('class-selection-grid');
         if (gridElem) {
@@ -90,19 +155,41 @@ export default function App() {
 
   // Navigate to Topics & Tests View
   const handleSelectSubject = (subject: Subject) => {
+    const subKey = `${selectedClassId}:${subject.id}`;
+    const isAdmin = isLoggedIn && userProfile.role === 'admin';
+
+    if (disabledEntities.subjects[subKey] === false && !isAdmin) {
+      setSecurityNotice(`Subject "${subject.name}" is currently disabled by administrator.`);
+      setTimeout(() => setSecurityNotice(null), 3000);
+      return;
+    }
+
     setSelectedSubject(subject);
-    setActiveView('topics');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToView('topics');
   };
 
   // Back to Subject Selection View
   const handleBackToSubjects = () => {
-    setActiveView('subjects');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToView('subjects');
   };
 
-  // Open interactive Test Taking Engine (only for logged-in users)
+  // Open interactive Test Taking Engine (only for logged-in users with active session)
   const handleStartTest = (topic: ChapterTopic, test: TopicTest) => {
+    // Route guard check for protected test content
+    const session = getActiveAuthSession();
+    if (!session || !isLoggedIn) {
+      handleRequestLoginForTest(topic, test);
+      return;
+    }
+
+    // Check if test is disabled
+    const isAdmin = session.role === 'admin';
+    if (disabledEntities.tests[test.id] === false && !isAdmin) {
+      setSecurityNotice(`Test "${test.title}" is currently disabled by administrator.`);
+      setTimeout(() => setSecurityNotice(null), 3000);
+      return;
+    }
+
     const currentClassInfo = CLASSES_LIST.find((c) => c.id === selectedClassId);
     setActiveTestState({
       topicTitle: topic.title,
@@ -119,14 +206,20 @@ export default function App() {
     setIsLoginModalOpen(true);
   };
 
-  // Handle Student Login via OTP
+  // Handle Student Login via OTP: sets verified session token in sessionStorage
   const handleStudentSuccess = (userData: Partial<UserProfile>) => {
+    const studentName = userData.name || 'Aarav Sharma';
+    const mobile = userData.mobile || '9876543210';
+
+    // Create session in sessionStorage
+    createAuthSession('student', mobile, studentName);
+
     setIsLoggedIn(true);
     setUserProfile((prev) => ({
       ...prev,
       role: 'student',
-      name: userData.name || prev.name,
-      mobile: userData.mobile || prev.mobile,
+      name: studentName,
+      mobile,
       currentClass: userData.currentClass || selectedClassId,
     }));
     setIsLoginModalOpen(false);
@@ -138,23 +231,25 @@ export default function App() {
     }
   };
 
-  // Handle Admin Login (abt1996 / 12345)
+  // Handle Admin Login (abt1996 / 12345): sets verified admin session token in sessionStorage
   const handleAdminSuccess = () => {
+    createAuthSession('admin', 'abt1996', 'Chief Administrator');
+
     setIsLoggedIn(true);
     setUserProfile({
       ...INITIAL_ADMIN_PROFILE,
     });
     setIsLoginModalOpen(false);
-    // Directly navigate admin to the control panel dashboard!
-    setActiveView('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Route directly to Admin Dashboard Control Center
+    navigateToView('dashboard', true);
   };
 
-  // Handle Logout
+  // Handle Logout: destroys sessionStorage token and kicks back to Home
   const handleLogout = () => {
+    clearAuthSession();
     setIsLoggedIn(false);
     setUserProfile(INITIAL_USER_PROFILE);
-    setActiveView('classes');
+    navigateToView('classes');
   };
 
   // Handle Profile Update
@@ -173,24 +268,139 @@ export default function App() {
     setAdminPassword(newPass);
   };
 
-  // Handle Toggle Grade independently by Admin
+  // Level 1: Toggle Grade
   const handleToggleGrade = (classId: ClassLevel) => {
-    setGradeStatus((prev) => ({
+    setDisabledEntities((prev) => ({
       ...prev,
-      [classId]: !prev[classId],
+      grades: {
+        ...prev.grades,
+        [classId]: !prev.grades[classId],
+      },
     }));
   };
 
-  // Handle Set All Grades
+  // Level 1: Set All Grades
   const handleSetAllGrades = (enabled: boolean) => {
-    setGradeStatus({
-      '6': enabled,
-      '7': enabled,
-      '8': enabled,
-      '9': enabled,
-      '10': enabled,
-      '11': enabled,
-      '12': enabled,
+    setDisabledEntities((prev) => ({
+      ...prev,
+      grades: {
+        '6': enabled,
+        '7': enabled,
+        '8': enabled,
+        '9': enabled,
+        '10': enabled,
+        '11': enabled,
+        '12': enabled,
+      },
+    }));
+  };
+
+  // Level 2: Toggle Subject
+  const handleToggleSubject = (classId: ClassLevel, subjectId: string) => {
+    const key = `${classId}:${subjectId}`;
+    setDisabledEntities((prev) => ({
+      ...prev,
+      subjects: {
+        ...prev.subjects,
+        [key]: prev.subjects[key] === false ? true : false,
+      },
+    }));
+  };
+
+  // Level 3: Toggle Topic
+  const handleToggleTopic = (topicId: string) => {
+    setDisabledEntities((prev) => ({
+      ...prev,
+      topics: {
+        ...prev.topics,
+        [topicId]: prev.topics[topicId] === false ? true : false,
+      },
+    }));
+  };
+
+  // Level 4: Toggle Test
+  const handleToggleTest = (testId: string) => {
+    setDisabledEntities((prev) => ({
+      ...prev,
+      tests: {
+        ...prev.tests,
+        [testId]: prev.tests[testId] === false ? true : false,
+      },
+    }));
+  };
+
+  // Add Subject dynamically into curriculum store
+  const handleAddSubject = (classId: ClassLevel, newSubject: Subject) => {
+    setCurriculumStore((prev) => {
+      const currentList = prev[classId] || [];
+      return {
+        ...prev,
+        [classId]: [newSubject, ...currentList],
+      };
+    });
+  };
+
+  // Delete Subject dynamically from curriculum store
+  const handleDeleteSubject = (classId: ClassLevel, subjectId: string) => {
+    setCurriculumStore((prev) => {
+      const currentList = prev[classId] || [];
+      return {
+        ...prev,
+        [classId]: currentList.filter((s) => s.id !== subjectId),
+      };
+    });
+  };
+
+  // Add Topic dynamically into selected subject
+  const handleAddTopic = (classId: ClassLevel, subjectId: string, newTopic: ChapterTopic) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updated = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: [...sub.topics, newTopic],
+          };
+        }
+        return sub;
+      });
+
+      // Also sync selected subject if currently active
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) => (s ? { ...s, topics: [...s.topics, newTopic] } : null));
+      }
+
+      return {
+        ...prev,
+        [classId]: updated,
+      };
+    });
+  };
+
+  // Delete Topic dynamically from selected subject
+  const handleDeleteTopic = (classId: ClassLevel, subjectId: string, topicId: string) => {
+    setCurriculumStore((prev) => {
+      const classSubjects = prev[classId] || [];
+      const updated = classSubjects.map((sub) => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: sub.topics.filter((t) => t.id !== topicId),
+          };
+        }
+        return sub;
+      });
+
+      if (selectedSubject && selectedSubject.id === subjectId) {
+        setSelectedSubject((s) =>
+          s ? { ...s, topics: s.topics.filter((t) => t.id !== topicId) } : null
+        );
+      }
+
+      return {
+        ...prev,
+        [classId]: updated,
+      };
     });
   };
 
@@ -220,9 +430,26 @@ export default function App() {
 
   const selectedClassInfo = CLASSES_LIST.find((c) => c.id === selectedClassId);
   const isAdmin = isLoggedIn && userProfile.role === 'admin';
+  const currentClassSubjects = curriculumStore[selectedClassId] || [];
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2A26] flex flex-col font-sans">
+      {/* Route Guard Security Alert Banner */}
+      {securityNotice && (
+        <div className="sticky top-0 z-50 bg-[#0F172A] text-white px-4 py-3 flex items-center justify-between shadow-lg border-b border-rose-500/30 animate-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center gap-2.5 max-w-7xl mx-auto w-full text-xs font-bold">
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{securityNotice}</span>
+          </div>
+          <button
+            onClick={() => setSecurityNotice(null)}
+            className="text-xs text-slate-400 hover:text-white cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Brand Header with User Profile system */}
       <Header
         onGoHome={handleBackToClasses}
@@ -236,8 +463,8 @@ export default function App() {
           setPendingTestForLogin(null);
           setIsLoginModalOpen(true);
         }}
-        onOpenProfile={() => setActiveView('profile')}
-        onOpenDashboard={() => setActiveView('dashboard')}
+        onOpenProfile={() => navigateToView('profile')}
+        onOpenDashboard={() => navigateToView('dashboard', isAdmin)}
         onLogout={handleLogout}
       />
 
@@ -248,7 +475,7 @@ export default function App() {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
             <ClassSelectionView
               onSelectClass={handleSelectClass}
-              gradeStatus={gradeStatus}
+              gradeStatus={disabledEntities.grades}
               isAdmin={isAdmin}
             />
           </div>
@@ -259,6 +486,9 @@ export default function App() {
           <div className="animate-in fade-in slide-in-from-right-2 duration-200">
             <SubjectSelectionView
               classId={selectedClassId}
+              subjectsList={currentClassSubjects}
+              disabledSubjects={disabledEntities.subjects}
+              isAdmin={isAdmin}
               onBackToClasses={handleBackToClasses}
               onSelectSubject={handleSelectSubject}
             />
@@ -272,6 +502,9 @@ export default function App() {
               className={selectedClassInfo?.name || `Class ${selectedClassId}`}
               subject={selectedSubject}
               isLoggedIn={isLoggedIn}
+              disabledTopics={disabledEntities.topics}
+              disabledTests={disabledEntities.tests}
+              isAdmin={isAdmin}
               onBackToSubjects={handleBackToSubjects}
               onStartTest={handleStartTest}
               onRequestLoginForTest={handleRequestLoginForTest}
@@ -288,7 +521,7 @@ export default function App() {
               onUpdateProfile={handleUpdateProfile}
               onAdminChangePassword={handleAdminChangePassword}
               onBackToHome={handleBackToClasses}
-              onOpenDashboard={() => setActiveView('dashboard')}
+              onOpenDashboard={() => navigateToView('dashboard', isAdmin)}
             />
           </div>
         )}
@@ -299,11 +532,19 @@ export default function App() {
             {isAdmin ? (
               <AdminDashboardView
                 adminUser={userProfile}
-                gradeStatus={gradeStatus}
+                disabledEntities={disabledEntities}
+                curriculumStore={curriculumStore}
                 onToggleGrade={handleToggleGrade}
+                onToggleSubject={handleToggleSubject}
+                onToggleTopic={handleToggleTopic}
+                onToggleTest={handleToggleTest}
+                onAddSubject={handleAddSubject}
+                onDeleteSubject={handleDeleteSubject}
+                onAddTopic={handleAddTopic}
+                onDeleteTopic={handleDeleteTopic}
                 onSetAllGrades={handleSetAllGrades}
                 onBackToHome={handleBackToClasses}
-                onChangePasswordClick={() => setActiveView('profile')}
+                onChangePasswordClick={() => navigateToView('profile')}
               />
             ) : (
               <DashboardView

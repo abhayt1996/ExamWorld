@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Search,
   Filter,
+  Lock,
 } from 'lucide-react';
 import { SUBJECTS_BY_CLASS, CLASSES_LIST } from '../data/curriculumData';
 import { ClassLevel, Subject } from '../types';
@@ -23,6 +24,9 @@ interface SubjectSelectionViewProps {
   classId: ClassLevel;
   onBackToClasses: () => void;
   onSelectSubject: (subject: Subject) => void;
+  subjectsList?: Subject[];
+  disabledSubjects?: Record<string, boolean>;
+  isAdmin?: boolean;
 }
 
 // Icon helper to render subject icon dynamically
@@ -133,12 +137,15 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
   classId,
   onBackToClasses,
   onSelectSubject,
+  subjectsList,
+  disabledSubjects = {},
+  isAdmin = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStream, setSelectedStream] = useState<'All' | 'Science' | 'Commerce' | 'Humanities'>('All');
 
   const classInfo = CLASSES_LIST.find((c) => c.id === classId) || CLASSES_LIST[4];
-  const allSubjects = SUBJECTS_BY_CLASS[classId] || SUBJECTS_BY_CLASS['10'] || [];
+  const allSubjects = subjectsList || SUBJECTS_BY_CLASS[classId] || SUBJECTS_BY_CLASS['10'] || [];
 
   // Stream filtering for classes 11 & 12
   const isSeniorSecondary = classId === '11' || classId === '12';
@@ -251,7 +258,40 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
           {filteredSubjects.map((subject, index) => {
             const palette = PASTEL_PALETTE[index % PASTEL_PALETTE.length];
             const totalTests = subject.topics.reduce((acc, top) => acc + top.tests.length, 0);
+            const subKey = `${classId}:${subject.id}`;
+            const isEnabled = disabledSubjects[subKey] !== false;
 
+            // If disabled by Admin and user is student: greyed out and unclickable!
+            if (!isEnabled && !isAdmin) {
+              return (
+                <div
+                  key={subject.id}
+                  className="relative text-left p-4 rounded-2xl bg-[#E5DFD6] border-2 border-[#D5CABE] opacity-55 grayscale cursor-not-allowed select-none shadow-none flex items-center justify-between gap-3"
+                  title={`${subject.name} is currently disabled by administrator.`}
+                  aria-disabled="true"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center bg-slate-400 text-white shadow-xs">
+                      {renderSubjectIcon(subject.icon, 'w-6 h-6')}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-heading font-extrabold text-base sm:text-lg tracking-tight text-[#6D5E51] truncate">
+                        {subject.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mt-0.5">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                        <span>Disabled by Admin</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-slate-200 flex items-center justify-center shrink-0 text-slate-500">
+                    <Lock className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              );
+            }
+
+            // Enabled OR Admin Preview
             return (
               <button
                 key={subject.id}
@@ -263,6 +303,7 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
                   transition-all duration-200 ease-out cursor-pointer
                   hover:-translate-y-1 active:translate-y-0.5
                   flex items-center justify-between gap-3
+                  ${!isEnabled && isAdmin ? 'ring-2 ring-amber-500/60' : ''}
                 `}
                 aria-label={`Open ${subject.name} topics`}
               >
@@ -279,14 +320,21 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <h3
-                      className={`
-                        font-heading font-extrabold text-base sm:text-lg tracking-tight
-                        ${palette.textColor} truncate
-                      `}
-                    >
-                      {subject.name}
-                    </h3>
+                    <div className="flex items-center gap-1.5">
+                      <h3
+                        className={`
+                          font-heading font-extrabold text-base sm:text-lg tracking-tight
+                          ${palette.textColor} truncate
+                        `}
+                      >
+                        {subject.name}
+                      </h3>
+                      {!isEnabled && isAdmin && (
+                        <span className="text-[10px] font-bold bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded">
+                          Disabled
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-[#54625A] opacity-90 mt-0.5">
                       <span>{subject.topics.length} Chapters</span>

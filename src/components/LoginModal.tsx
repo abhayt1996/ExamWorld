@@ -12,6 +12,7 @@ import {
   User,
 } from 'lucide-react';
 import { UserProfile, ClassLevel } from '../types';
+import { secureVault } from '../utils/security';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -107,7 +108,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }, 400);
   };
 
-  // Admin Login Handler
+  // Admin Login Handler - encapsulated validation through secure closure
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -115,13 +116,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     setTimeout(() => {
       setIsLoading(false);
-      const trimmedUser = adminUsername.trim();
-      const trimmedPass = adminPassword.trim();
+      const isAuthorized = secureVault.verifyAdminCredentials(adminUsername, adminPassword);
 
-      if (trimmedUser === 'abt1996' && trimmedPass === currentAdminPassword) {
+      if (isAuthorized) {
         onAdminSuccess();
       } else {
-        setErrorMessage('Invalid credentials. Expected Username: abt1996');
+        setErrorMessage('Invalid administrator credentials. Please check your username and password.');
       }
     }, 450);
   };

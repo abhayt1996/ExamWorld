@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ClassLevel } from '../types';
 import { CLASSES_LIST } from '../data/curriculumData';
+import { secureVault } from '../utils/security';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -68,7 +69,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     setPasswordError('');
     setPasswordSuccess('');
 
-    if (oldPassword !== currentAdminPassword) {
+    if (!secureVault.verifyCurrentPass(oldPassword) && oldPassword !== currentAdminPassword) {
       setPasswordError('Current password does not match.');
       return;
     }
@@ -83,6 +84,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       return;
     }
 
+    const updated = secureVault.updateAdminPass(oldPassword, newPassword);
     if (onAdminChangePassword) {
       onAdminChangePassword(newPassword);
     }

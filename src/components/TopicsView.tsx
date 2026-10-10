@@ -20,6 +20,9 @@ interface TopicsViewProps {
   className: string;
   subject: Subject;
   isLoggedIn: boolean;
+  disabledTopics?: Record<string, boolean>;
+  disabledTests?: Record<string, boolean>;
+  isAdmin?: boolean;
   onBackToSubjects: () => void;
   onStartTest: (topic: ChapterTopic, test: TopicTest) => void;
   onRequestLoginForTest: (topic: ChapterTopic, test: TopicTest) => void;
@@ -29,6 +32,9 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
   className,
   subject,
   isLoggedIn,
+  disabledTopics = {},
+  disabledTests = {},
+  isAdmin = false,
   onBackToSubjects,
   onStartTest,
   onRequestLoginForTest,
@@ -211,6 +217,12 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                       {hasSubTopics && (
                         <span className="hidden sm:inline-flex text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md bg-[#D46244] text-white">
                           All 12 Tenses
+                        </span>
+                      )}
+                      {disabledTopics[topic.id] === false && (
+                        <span className="inline-flex items-center gap-1 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>Disabled by Admin</span>
                         </span>
                       )}
                     </h2>
@@ -427,29 +439,46 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                                             Auto-Scroll Question UI
                                           </span>
 
-                                          <button
-                                            onClick={() => handleTestClick(topic, test)}
-                                            className={`
-                                              inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer shadow-xs hover:shadow-sm
-                                              ${
-                                                isLoggedIn
-                                                  ? 'bg-[#D46244] hover:bg-[#C25538] text-white'
-                                                  : 'bg-[#4A3728] hover:bg-[#3D2C1E] text-white'
-                                              }
-                                            `}
-                                          >
-                                            {isLoggedIn ? (
-                                              <>
-                                                <Play className="w-3 h-3 fill-white" />
-                                                <span>Start Test</span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Lock className="w-3 h-3" />
-                                                <span>Login to Start</span>
-                                              </>
-                                            )}
-                                          </button>
+                                          {disabledTests[test.id] === false && !isAdmin ? (
+                                            <button
+                                              disabled
+                                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide bg-slate-200 text-slate-500 cursor-not-allowed select-none opacity-60"
+                                            >
+                                              <Lock className="w-3 h-3" />
+                                              <span>Disabled by Admin</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              onClick={() => handleTestClick(topic, test)}
+                                              className={`
+                                                inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer shadow-xs hover:shadow-sm
+                                                ${
+                                                  disabledTests[test.id] === false && isAdmin
+                                                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                                    : isLoggedIn
+                                                    ? 'bg-[#D46244] hover:bg-[#C25538] text-white'
+                                                    : 'bg-[#4A3728] hover:bg-[#3D2C1E] text-white'
+                                                }
+                                              `}
+                                            >
+                                              {disabledTests[test.id] === false && isAdmin ? (
+                                                <>
+                                                  <Play className="w-3 h-3 fill-white" />
+                                                  <span>Disabled (Admin)</span>
+                                                </>
+                                              ) : isLoggedIn ? (
+                                                <>
+                                                  <Play className="w-3 h-3 fill-white" />
+                                                  <span>Start Test</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Lock className="w-3 h-3" />
+                                                  <span>Login to Start</span>
+                                                </>
+                                              )}
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -522,29 +551,46 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                                 Immediate Score & Solution
                               </span>
 
-                              <button
-                                onClick={() => handleTestClick(topic, test)}
-                                className={`
-                                  inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm
-                                  ${
-                                    isLoggedIn
-                                      ? 'bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white'
-                                      : 'bg-[#4A3728] hover:bg-[#3D2C1E] active:bg-[#322317] text-white'
-                                  }
-                                `}
-                              >
-                                {isLoggedIn ? (
-                                  <>
-                                    <Play className="w-3.5 h-3.5 fill-white" />
-                                    <span>Start Test</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Lock className="w-3.5 h-3.5" />
-                                    <span>Login to Start</span>
-                                  </>
-                                )}
-                              </button>
+                              {disabledTests[test.id] === false && !isAdmin ? (
+                                <button
+                                  disabled
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide bg-slate-200 text-slate-500 cursor-not-allowed select-none opacity-60"
+                                >
+                                  <Lock className="w-3.5 h-3.5" />
+                                  <span>Disabled by Admin</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleTestClick(topic, test)}
+                                  className={`
+                                    inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer shadow-xs hover:shadow-sm
+                                    ${
+                                      disabledTests[test.id] === false && isAdmin
+                                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                        : isLoggedIn
+                                        ? 'bg-[#D46244] hover:bg-[#C25538] active:bg-[#B3492F] text-white'
+                                        : 'bg-[#4A3728] hover:bg-[#3D2C1E] active:bg-[#322317] text-white'
+                                    }
+                                  `}
+                                >
+                                  {disabledTests[test.id] === false && isAdmin ? (
+                                    <>
+                                      <Play className="w-3.5 h-3.5 fill-white" />
+                                      <span>Disabled (Admin)</span>
+                                    </>
+                                  ) : isLoggedIn ? (
+                                    <>
+                                      <Play className="w-3.5 h-3.5 fill-white" />
+                                      <span>Start Test</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Lock className="w-3.5 h-3.5" />
+                                      <span>Login to Start</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
