@@ -26,6 +26,7 @@ export interface Question {
   options: string[];
   correctIndex: number;
   explanation: string;
+  imageUrl?: string;
 }
 
 export interface TopicTest {

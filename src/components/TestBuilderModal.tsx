@@ -15,6 +15,9 @@ import {
   Edit3,
   ChevronDown,
   ChevronUp,
+  Image as ImageIcon,
+  Upload,
+  RefreshCw,
 } from 'lucide-react';
 import { TopicTest, Question, ChapterTopic, ClassLevel } from '../types';
 
@@ -27,6 +30,7 @@ interface QuestionDraft {
   optionD: string;
   correctIndex: number;
   explanation: string;
+  imageUrl?: string;
   isEditing?: boolean;
 }
 
@@ -154,6 +158,7 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
         optionD: q.options[3] || '',
         correctIndex: q.correctIndex,
         explanation: q.explanation || '',
+        imageUrl: q.imageUrl,
         isEditing: false, // collapsed review by default for rapid overview
       }));
 
@@ -166,6 +171,7 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
           optionD: '',
           correctIndex: 0,
           explanation: '',
+          imageUrl: '',
           isEditing: true,
         },
       ]);
@@ -184,6 +190,7 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
           optionD: '',
           correctIndex: 0,
           explanation: '',
+          imageUrl: '',
           isEditing: true,
         },
       ]);
@@ -203,6 +210,7 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
         optionD: '',
         correctIndex: 0,
         explanation: '',
+        imageUrl: '',
         isEditing: true,
       },
     ]);
@@ -229,11 +237,43 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
   const handleUpdateQuestion = (
     index: number,
     field: keyof QuestionDraft,
-    value: string | number | boolean
+    value: string | number | boolean | undefined
   ) => {
     setQuestions((prev) =>
       prev.map((q, i) => (i === index ? { ...q, [field]: value } : q))
     );
+  };
+
+  // Image Upload handler with FileReader API -> Base64 Data URL string
+  const handleImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (PNG, JPG, SVG, WebP, GIF).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Data = event.target?.result as string;
+      if (base64Data) {
+        handleUpdateQuestion(index, 'imageUrl', base64Data);
+        setErrorMsg(null);
+      }
+    };
+    reader.onerror = () => {
+      setErrorMsg('Failed to process image file. Please try another image.');
+    };
+    reader.readAsDataURL(file);
+
+    // Reset file input value to allow re-uploading the same file if needed
+    e.target.value = '';
+  };
+
+  // Delete/Remove Image handler
+  const handleRemoveImage = (index: number) => {
+    handleUpdateQuestion(index, 'imageUrl', '');
   };
 
   // Quick autofill sample helper
@@ -321,6 +361,7 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
         options: [q.optionA.trim(), q.optionB.trim(), q.optionC.trim(), q.optionD.trim()],
         correctIndex: q.correctIndex,
         explanation: q.explanation.trim() || 'Standard curriculum explanation.',
+        imageUrl: q.imageUrl ? q.imageUrl : undefined,
       })),
     };
 
@@ -569,6 +610,18 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
                   {/* Collapsed Preview when isEditing is false */}
                   {!q.isEditing ? (
                     <div className="text-xs text-[#554234] space-y-2 py-1">
+                      {q.imageUrl && (
+                        <div className="flex items-center gap-2.5 py-1">
+                          <img
+                            src={q.imageUrl}
+                            alt={`Question ${idx + 1} diagram thumbnail`}
+                            className="w-14 h-14 object-contain rounded-lg border border-[#DDD0BF] bg-white p-1 shrink-0 shadow-2xs"
+                          />
+                          <span className="text-[11px] font-bold text-[#D46244] bg-[#FAF0E7] px-2 py-0.5 rounded border border-[#EBD7C7]">
+                            🖼️ Image / Diagram Attached
+                          </span>
+                        </div>
+                      )}
                       <p className="font-semibold text-sm text-[#2F241C]">
                         {q.question || <span className="text-slate-400 italic">No question prompt entered</span>}
                       </p>
@@ -613,6 +666,96 @@ export const TestBuilderModal: React.FC<TestBuilderModalProps> = ({
                           placeholder="e.g., Which of the following sentences correctly applies the Past Perfect tense?"
                           className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#DDD0BF] text-xs font-medium text-[#2F241C] focus:bg-white focus:outline-none focus:border-[#D46244] transition-all resize-none"
                         />
+                      </div>
+
+                      {/* 1b. Optional Image / Diagram Upload Section */}
+                      <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E5DACB]">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-bold text-[#564436] flex items-center gap-1.5">
+                            <ImageIcon className="w-4 h-4 text-[#D46244]" />
+                            <span>Optional Image / Diagram</span>
+                          </label>
+                          <span className="text-[10px] text-[#8C7A6B] font-medium">
+                            Converted to Base64 data URL
+                          </span>
+                        </div>
+
+                        {q.imageUrl ? (
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-white rounded-xl border border-[#DDD0BF]">
+                            {/* Clear Preview Thumbnail */}
+                            <div className="relative group shrink-0">
+                              <img
+                                src={q.imageUrl}
+                                alt={`Question ${idx + 1} thumbnail`}
+                                className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl border border-[#E2D5C4] bg-[#FAF8F5] p-1.5 shadow-2xs"
+                              />
+                              <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <span className="text-[10px] text-white font-bold px-1.5 py-0.5 rounded bg-black/60">
+                                  Preview
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Controls: Change Image & Delete Image */}
+                            <div className="space-y-2 flex-1">
+                              <div>
+                                <span className="text-xs font-bold text-[#2F241C] flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Image Attached Successfully</span>
+                                </span>
+                                <p className="text-[11px] text-[#7A6858] mt-0.5 font-medium">
+                                  This diagram will be dynamically displayed in the student question pane during test taking.
+                                </p>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                {/* Change Image Button */}
+                                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF4ED] hover:bg-[#F2E8DC] active:bg-[#EADBCC] text-[#554234] border border-[#DDD0BF] text-xs font-bold cursor-pointer transition-colors shadow-2xs">
+                                  <RefreshCw className="w-3.5 h-3.5 text-[#D46244]" />
+                                  <span>Change Image</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => handleImageUpload(idx, e)}
+                                  />
+                                </label>
+
+                                {/* Delete Image Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImage(idx)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>Delete Image</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Empty state: Upload Input */
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white rounded-xl border border-[#DDD0BF]">
+                            <div className="flex items-center gap-3">
+                              <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 border-dashed border-[#DDD0BF] hover:border-[#D46244] bg-[#FAF8F5] hover:bg-white text-xs font-bold text-[#5C4839] cursor-pointer transition-all shadow-2xs group shrink-0">
+                                <Upload className="w-4 h-4 text-[#D46244] transition-transform group-hover:-translate-y-0.5" />
+                                <span>Upload Image / Diagram</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleImageUpload(idx, e)}
+                                />
+                              </label>
+                              <span className="text-xs text-[#8C7A6B]">
+                                Attach diagrams, tables, sentences, or formulas for this question.
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-[#A8988A] font-mono hidden sm:inline">
+                              PNG, JPG, SVG, WebP
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* 2. Options Grid: A, B, C, D */}

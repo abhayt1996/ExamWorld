@@ -264,6 +264,20 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
 
                   {/* Question Box */}
                   <div className="p-5 rounded-2xl bg-white border border-[#E3D7C7] shadow-xs mb-6">
+                    {/* Dynamically render diagram/image if present */}
+                    {Boolean(currentQ.imageUrl && currentQ.imageUrl.trim()) && (
+                      <div className="mb-4 flex flex-col items-center justify-center p-3 bg-[#FAF8F5] rounded-xl border border-[#E8DEC8]">
+                        <img
+                          src={currentQ.imageUrl}
+                          alt={`Reference diagram for Question ${currentIndex + 1}`}
+                          className="max-h-80 w-auto max-w-full rounded-lg object-contain shadow-2xs border border-[#E8DFC8]/50"
+                        />
+                        <span className="text-[10px] text-[#8C7A6B] font-semibold mt-1.5 uppercase tracking-wider">
+                          Question Diagram / Visual Reference
+                        </span>
+                      </div>
+                    )}
+
                     <p className="text-base sm:text-lg font-semibold text-[#2D231B] leading-relaxed">
                       {currentQ.question}
                     </p>
@@ -545,6 +559,17 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                           )}
                         </span>
                       </div>
+
+                      {/* Diagram in Review Mode if attached */}
+                      {Boolean(q.imageUrl && q.imageUrl.trim()) && (
+                        <div className="mb-3 max-w-lg p-2.5 bg-[#FAF8F5] rounded-xl border border-[#E8DEC8]">
+                          <img
+                            src={q.imageUrl}
+                            alt={`Reference diagram for Question ${idx + 1}`}
+                            className="max-h-56 w-auto max-w-full rounded-lg object-contain shadow-2xs border border-[#E8DFC8]/50"
+                          />
+                        </div>
+                      )}
 
                       <p className="text-sm sm:text-base font-semibold text-[#2F241C] mb-3">
                         {q.question}
