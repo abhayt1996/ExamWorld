@@ -1,0 +1,6 @@
+{
+  "name": "Exam WORLD",
+  "description": "Interactive Indian school curriculum exam and test practice portal for Classes 6 to 12 at examworld.site.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
