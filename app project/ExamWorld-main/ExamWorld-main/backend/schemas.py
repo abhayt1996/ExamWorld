@@ -1,7 +1,6 @@
 from typing import List, Optional, Any
 from pydantic import BaseModel, Field
 
-
 # ==========================================
 # QUESTION SCHEMAS
 # ==========================================
@@ -154,3 +153,39 @@ class ApiResponse(BaseModel):
     success: bool
     message: str
     data: Optional[Any] = None
+
+
+# ==========================================
+# OTP AUTHENTICATION SCHEMAS
+# ==========================================
+
+class SendOtpRequest(BaseModel):
+    mobile: str
+    name: Optional[str] = "Student"
+
+class SendOtpResponse(BaseModel):
+    success: bool
+    message: str
+    mobile: str
+    expires_in_seconds: int
+    otp_preview: Optional[str] = None
+
+class VerifyOtpRequest(BaseModel):
+    mobile: str
+    otp: str
+    name: Optional[str] = "Abhay"
+    currentClass: Optional[str] = "10"
+
+class UserProfileData(BaseModel):
+    id: str
+    name: str
+    mobile: str
+    role: str
+    current_class: str
+    created_at: Optional[str] = None
+
+class VerifyOtpResponse(BaseModel):
+    success: bool
+    message: str
+    token: str
+    user: UserProfileData
