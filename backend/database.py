@@ -3,11 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-# Standard XAMPP default MySQL connection string (user 'root', empty password, database 'examworld')
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "mysql+pymysql://root:@localhost/examworld?charset=utf8mb4"
-)
+# TiDB Serverless Cloud Connection String
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://4QbvfAuUsgd8h2L.root:Qg4sVgFVJHDIuuSS@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/examworld?ssl_verify_cert=true&ssl_verify_identity=true"
 
 # SQLAlchemy engine configured for MySQL
 engine = create_engine(
