@@ -63,31 +63,44 @@ function mapApiSubjectsToStore(subjects: any[]): Record<string, Subject[]> {
       store[classKey] = [];
     }
     
-    const mappedTopics: ChapterTopic[] = (sub.topics || []).map((top: any) => ({
-      id: top.id,
-      chapterNumber: top.chapter_number ?? top.chapterNumber ?? 1,
-      title: top.title,
-      summary: top.summary || '',
-      subTopics: [], // 🚨 SAFEGUARD: Prevents accordion mapping crashes
-      tests: (top.tests || []).map((tst: any) => ({
-        id: tst.id,
-        title: tst.title || 'Assessment Test',
-        type: tst.type || 'concept', // 🚨 SAFEGUARD: Prevents icon rendering crashes
-        badge: tst.badge || 'Chapter Quiz', // 🚨 SAFEGUARD: Prevents badge rendering crashes
-        questionsCount: tst.questions_count ?? tst.questionsCount ?? (tst.questions?.length || 0),
-        durationMinutes: tst.duration_minutes ?? tst.durationMinutes ?? 15,
-        marks: tst.marks ?? 20,
-        difficulty: tst.difficulty || 'Medium',
-        questions: (tst.questions || []).map((q: any) => ({
-          id: q.id,
-          question: q.question_text ?? q.question ?? 'Missing Question',
-          options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'],
-          correctIndex: q.correct_index ?? q.correctIndex ?? 0,
-          explanation: q.explanation || '',
-          imageUrl: q.image_url ?? q.imageUrl ?? null,
+    const mappedTopics: ChapterTopic[] = (sub.topics || []).map((top: any) => {
+      // Find matching default topic to preserve subTopics (e.g. ALL_12_TENSES for Tenses chapter)
+      let defaultSubTopics: NestedSubTopic[] = [];
+      const classSubjects = SUBJECTS_BY_CLASS[classKey] || [];
+      const matchingSub = classSubjects.find((s) => s.id === sub.id || s.name === sub.name);
+      if (matchingSub) {
+        const matchingTop = matchingSub.topics.find((t) => t.id === top.id || t.title === top.title);
+        if (matchingTop?.subTopics) {
+          defaultSubTopics = matchingTop.subTopics;
+        }
+      }
+
+      return {
+        id: top.id,
+        chapterNumber: top.chapter_number ?? top.chapterNumber ?? 1,
+        title: top.title,
+        summary: top.summary || '',
+        subTopics: Array.isArray(top.subTopics) && top.subTopics.length > 0 ? top.subTopics : defaultSubTopics,
+        tests: (top.tests || []).map((tst: any) => ({
+          id: tst.id,
+          title: tst.title || 'Assessment Test',
+          type: tst.type || 'concept',
+          badge: tst.badge || 'Chapter Quiz',
+          questionsCount: tst.questions_count ?? tst.questionsCount ?? (tst.questions?.length || 0),
+          durationMinutes: tst.duration_minutes ?? tst.durationMinutes ?? 15,
+          marks: tst.marks ?? 20,
+          difficulty: tst.difficulty || 'Medium',
+          questions: (tst.questions || []).map((q: any) => ({
+            id: q.id,
+            question: q.question_text ?? q.question ?? 'Missing Question',
+            options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctIndex: q.correct_index ?? q.correctIndex ?? 0,
+            explanation: q.explanation || '',
+            imageUrl: q.image_url ?? q.imageUrl ?? null,
+          })),
         })),
-      })),
-    }));
+      };
+    });
 
     store[classKey].push({
       id: sub.id,

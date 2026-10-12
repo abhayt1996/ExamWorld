@@ -237,7 +237,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                   <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/80 text-[#543F30] text-xs font-bold border border-[#DDD0BF]">
                     <Zap className="w-3.5 h-3.5 text-[#D46244]" />
                     <span>
-                      {hasSubTopics ? '24 Tense Tests (2 per Tense)' : `${topic.tests.length} Tests Ready`}
+                      {hasSubTopics ? '24 Tense Tests (2 per Tense)' : `${topic.tests?.length || 0} Tests Ready`}
                     </span>
                   </span>
 
@@ -399,7 +399,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
 
                                   {/* The Exactly 2 Clickable Tests for each Tense */}
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                    {subTopic.tests.map((test) => (
+                                    {(subTopic.tests || []).map((test) => (
                                       <div
                                         key={test.id}
                                         className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E4D8C8] shadow-2xs hover:border-[#D46244]/50 hover:shadow-xs transition-all flex flex-col justify-between"
@@ -495,7 +495,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                     <div>
                       <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-sm font-heading font-extrabold text-[#32261E] tracking-tight uppercase">
-                          Available Chapter Tests & Quizzes ({topic.tests.length})
+                          Available Chapter Tests & Quizzes ({topic.tests?.length || 0})
                         </h3>
                         <span className="text-xs font-medium text-[#8C7A6B]">
                           Timed assessments with instant explanations
@@ -503,7 +503,7 @@ export const TopicsView: React.FC<TopicsViewProps> = ({
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                        {topic.tests.map((test) => (
+                        {(topic.tests || []).map((test) => (
                           <div
                             key={test.id}
                             className="p-4 rounded-2xl bg-white border border-[#E4D8C8] shadow-xs hover:border-[#D46244]/50 hover:shadow-md transition-all duration-200 flex flex-col justify-between"
