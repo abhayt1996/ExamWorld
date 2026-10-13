@@ -517,17 +517,10 @@ def submit_student_test(
     try:
         user = db.query(models.User).filter(models.User.id == payload.user_id).first()
         if not user:
-            # Auto-provision learner profile if needed
-            user = models.User(
-                id=payload.user_id,
-                role="student",
-                name="Student Learner",
-                username=f"learner_{uuid.uuid4().hex[:5]}",
-                password_hash=hash_password("default123"),
-                current_class="10"
+            raise HTTPException(
+                status_code=401,
+                detail="You must be logged in with a valid account to submit a test."
             )
-            db.add(user)
-            db.flush()
 
         attempt_id = payload.id or f"attempt-{uuid.uuid4().hex[:12]}"
         new_attempt = models.TestAttempt(
