@@ -307,7 +307,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   required
                   value={adminUsername}
                   onChange={(e) => setAdminUsername(e.target.value)}
-                  placeholder="abt1996"
+                  placeholder="Enter admin username"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#DDD0BF] text-[#2F241C] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#1E293B]"
                 />
               </div>
