@@ -76,9 +76,16 @@ export async function toggleEntityVisibility(type: string, id: string, is_active
   const res = await fetch(`${API_BASE_URL}/api/admin/toggle`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, id, is_active }),
+    // Match Python backend schema exactly:
+    body: JSON.stringify({ entity_type: type, entity_id: id, is_active }), 
   });
   if (!res.ok) throw new Error('Failed to toggle visibility');
+  return res.json();
+}
+
+export async function fetchAdminGraphData() {
+  const res = await fetch(`${API_BASE_URL}/api/admin/graphs`);
+  if (!res.ok) throw new Error('Failed to fetch graph data');
   return res.json();
 }
 
