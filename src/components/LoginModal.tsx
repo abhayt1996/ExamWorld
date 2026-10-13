@@ -38,12 +38,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [authMode, setAuthMode] = useState<'student' | 'admin'>('student');
 
   // Student Credentials State
-  const [studentUsername, setStudentUsername] = useState('student1');
-  const [studentPassword, setStudentPassword] = useState('password123');
+  const [studentUsername, setStudentUsername] = useState('');
+  const [studentPassword, setStudentPassword] = useState('');
   const [showStudentPassword, setShowStudentPassword] = useState(false);
 
   // Admin Credentials State
-  const [adminUsername, setAdminUsername] = useState('abt1996');
+  const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
 
