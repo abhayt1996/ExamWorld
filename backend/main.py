@@ -18,24 +18,25 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from passlib.context import CryptContext
+# from passlib.context import CryptContext
+import bcrypt
 
 # Configure structured logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("examworld.backend")
 
-# Password hashing context using standard bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    """Hashes a plain-text password using bcrypt."""
-    return pwd_context.hash(password)
-
+    """Hashes a plain-text password using direct bcrypt."""
+    # Truncate to 72 bytes to prevent bcrypt 4.1+ ValueError crash on Render
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies a plain-text password against a stored bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    pwd_bytes = plain_password.encode("utf-8")[:72]
+    return bcrypt.checkpw(pwd_bytes, hashed_password.encode("utf-8"))
 
 
 # Database setup & models
