@@ -13,7 +13,8 @@ import uuid
 import time
 import logging
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
@@ -704,13 +705,49 @@ def get_admin_analytics(db: Session = Depends(get_db)):
     tags=["Leaderboard"]
 )
 def get_leaderboard(
-    class_level: Optional[str] = None,
+    class_level: Optional[str] = Query(default=None),
+    class_filter: Optional[str] = Query(default=None),
+    time_range: Optional[str] = Query(default="week"),
     db: Session = Depends(get_db)
 ):
     """
-    Groups test_attempts by student, sums score, sums total_time_spent_seconds,
-    and ranks students descending by total score, with time as tie-breaker.
+    Groups test_attempts by student, filters by IST timeline (Sunday 00:00:00 to Saturday 23:59:59 IST)
+    and class, and ranks students descending by total score, with time as tie-breaker.
     """
+    # 1. Calculate current time in Indian Standard Time (IST = UTC + 5:30)
+    ist_offset = timedelta(hours=5, minutes=30)
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    now_ist = now_utc + ist_offset
+
+    # 2. Calculate Sunday 00:00:00 IST to Saturday 23:59:59 IST
+    # (weekday() + 1) % 7 gives: Sunday = 0, Monday = 1 ... Saturday = 6.
+    days_since_sunday = (now_ist.weekday() + 1) % 7
+    current_sunday_start_ist = (now_ist - timedelta(days=days_since_sunday)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    next_sunday_start_ist = current_sunday_start_ist + timedelta(days=7)
+
+    start_utc = None
+    end_utc = None
+
+    clean_range = (time_range or "week").lower().strip()
+    if clean_range == "1h":
+        start_utc = now_utc - timedelta(hours=1)
+    elif clean_range == "24h":
+        start_utc = now_utc - timedelta(hours=24)
+    elif clean_range == "week":
+        # Current Week: Sunday 00:00:00 IST to Saturday 23:59:59 IST
+        start_utc = current_sunday_start_ist - ist_offset
+        end_utc = next_sunday_start_ist - ist_offset
+    elif clean_range == "last_week":
+        # Previous Week: Last Sunday 00:00:00 IST to Last Saturday 23:59:59 IST
+        prev_sunday_ist = current_sunday_start_ist - timedelta(days=7)
+        start_utc = prev_sunday_ist - ist_offset
+        end_utc = current_sunday_start_ist - ist_offset
+    elif clean_range == "month":
+        month_start_ist = now_ist.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_utc = month_start_ist - ist_offset
+
     query = (
         db.query(
             models.User.id.label("user_id"),
@@ -725,8 +762,15 @@ def get_leaderboard(
         .filter(models.User.role == "student")
     )
 
-    if class_level and class_level.lower() != "all":
-        query = query.filter(models.User.current_class == class_level)
+    if start_utc is not None:
+        query = query.filter(models.TestAttempt.created_at >= start_utc)
+    if end_utc is not None:
+        query = query.filter(models.TestAttempt.created_at < end_utc)
+
+    raw_class = class_filter or class_level
+    if raw_class and raw_class.strip().lower() not in ("all", "all classes"):
+        clean_class = raw_class.strip().lower().replace("class", "").strip()
+        query = query.filter(models.User.current_class == clean_class)
 
     query = query.group_by(
         models.User.id,
@@ -766,7 +810,6 @@ def get_leaderboard(
         )
 
     return entries
-
 
 # ----------------------------------------------------
 # 9. STUDENT TEST HISTORY: GET /api/student/{user_id}/history
