@@ -33,7 +33,34 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
   onRecordTestCompleted,
 }) => {
   const { test, topicTitle, chapterNumber, subjectName, className } = testState;
-  const questions: Question[] = test.questions;
+  const [questions, setQuestions] = useState<Question[]>(test.questions);
+
+  // 1. Move the shuffle logic into a reusable function
+  const applyShuffle = () => {
+    const shuffleArray = (array: any[]) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    const shuffledQ = test.questions.map((q) => {
+      const optionsCopy = [...q.options];
+      const correctText = optionsCopy[q.correctIndex];
+      const shuffledOptions = shuffleArray(optionsCopy);
+      const newCorrectIndex = shuffledOptions.indexOf(correctText);
+      return { ...q, options: shuffledOptions, correctIndex: newCorrectIndex };
+    });
+
+    setQuestions(shuffleArray(shuffledQ));
+  };
+
+  // 2. Call it once when the modal first opens
+  useEffect(() => {
+    applyShuffle();
+  }, [test]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
@@ -167,6 +194,7 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
   };
 
   const handleRetake = () => {
+    applyShuffle();
     setSelectedAnswers({});
     setFlaggedQuestions({});
     setTimeSpentPerQuestion({});
@@ -442,12 +470,12 @@ export const TestRunnerModal: React.FC<TestRunnerModalProps> = ({
                 </span>
 
                 <h3 className="text-3xl sm:text-4xl font-heading font-black text-[#2F241C] mt-1">
-                  {percentage}% Score
-                </h3>
+  {marksEarned} / {test.marks} Marks <span className="text-2xl text-[#8C7A6B]">({percentage}%)</span>
+</h3>
 
-                <p className="text-sm font-semibold text-[#665243] mt-1">
-                  Earned {marksEarned} out of {test.marks} Total Marks
-                </p>
+<p className="text-sm font-semibold text-[#665243] mt-1">
+  You answered {correctCount} out of {questions.length} questions correctly.
+</p>
 
                 {/* Performance Metrics Row */}
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/80 p-3.5 rounded-2xl border border-[#DDD0BF]">
