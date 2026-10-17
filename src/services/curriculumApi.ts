@@ -105,8 +105,15 @@ export async function getAdminAnalytics() {
   return res.json();
 }
 
-export async function getLiveLeaderboard(classFilter: string = 'all') {
-  const res = await fetch(`${API_BASE_URL}/api/leaderboard?class_filter=${classFilter}`);
+export async function getLiveLeaderboard(
+  classFilter: string = 'All',
+  timeRange: string = 'week'
+) {
+  const params = new URLSearchParams({
+    class_filter: classFilter,
+    time_range: timeRange,
+  });
+  const res = await fetch(`${API_BASE_URL}/api/leaderboard?${params.toString()}`);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   return res.json();
 }
