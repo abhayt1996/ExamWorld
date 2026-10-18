@@ -686,6 +686,7 @@ export default function App() {
   };
 
   // Update Topic details (title, summary, chapterNumber) - persists to MySQL via PUT /api/admin/topics/{id}
+  // Update Topic details (title, summary, chapterNumber) - persists to MySQL via PUT /api/admin/topics/{id}
   const handleUpdateTopic = async (
     classId: ClassLevel,
     subjectId: string,
@@ -694,6 +695,7 @@ export default function App() {
   ) => {
     try {
       await updateTopicApi(topicId, {
+        subjectId: subjectId, // <-- FIX: This was missing, causing silent database rejections
         title: updatedTopic.title,
         summary: updatedTopic.summary,
         chapterNumber: updatedTopic.chapterNumber,
@@ -735,7 +737,6 @@ export default function App() {
       };
     });
   };
-
   // Update Subtopic / Tense details
   const handleUpdateSubTopic = (
     classId: ClassLevel,
