@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Trophy,
   Clock,
@@ -6,9 +6,12 @@ import {
   Filter,
   Search,
   Calendar,
+  X,
+  ArrowUpDown,
+  BookOpen
 } from 'lucide-react';
-import { UserProfile, ClassLevel, LeaderboardEntry } from '../types';
-import { getLiveLeaderboard } from '../services/curriculumApi';
+import { UserProfile, ClassLevel, LeaderboardEntry, UserTestRecord } from '../types';
+import { getLiveLeaderboard, getStudentHistory } from '../services/curriculumApi';
 
 interface LeaderboardViewProps {
   currentUser: UserProfile | null;
@@ -17,6 +20,8 @@ interface LeaderboardViewProps {
 }
 
 type TimeRangeOption = 'week' | 'last_week' | '24h' | '1h' | 'month' | 'all';
+type SortField = 'date' | 'testTitle' | 'subjectName' | 'percentage' | 'totalTimeSpentSeconds';
+type SortDirection = 'asc' | 'desc';
 
 const TIME_RANGE_LABELS: { id: TimeRangeOption; label: string }[] = [
   { id: 'week', label: 'This Week (Sun–Sat)' },
@@ -37,10 +42,19 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   const [rankedEntries, setRankedEntries] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Student History Modal State
+  const [viewingStudentHistory, setViewingStudentHistory] = useState<LeaderboardEntry | null>(null);
+  const [studentHistoryData, setStudentHistoryData] = useState<UserTestRecord[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(false);
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const isAdmin = currentUser?.role === 'admin';
+
   // Helper to show the current Sunday 12:00 AM – Saturday 11:59 PM date window
   const getCurrentWeekWindowText = () => {
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const dayOfWeek = now.getDay();
     const sunday = new Date(now);
     sunday.setDate(now.getDate() - dayOfWeek);
     const saturday = new Date(sunday);
@@ -51,7 +65,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     return `Sun, ${fmt(sunday)} (12:00 AM) – Sat, ${fmt(saturday)} (11:59 PM)`;
   };
 
-  // Fetch live calculated leaderboard from backend / MySQL
+  // Fetch live calculated leaderboard
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -137,6 +151,60 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     );
   };
 
+  // Click Handler for Admin to view student history
+  const handleStudentClick = async (student: LeaderboardEntry) => {
+    if (!isAdmin) return;
+    setViewingStudentHistory(student);
+    setIsHistoryLoading(true);
+    try {
+      const response = await getStudentHistory(student.id);
+      if (response.success && response.data) {
+        setStudentHistoryData(response.data);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch student history", err);
+      setStudentHistoryData([]);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const sortedHistory = useMemo(() => {
+    return [...studentHistoryData].sort((a, b) => {
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
+
+      // Handle custom string date sorting loosely by assuming 'date' strings might need parsing if they aren't 'Just now'
+      if (sortField === 'date') {
+         aVal = new Date(a.date).getTime() || 0;
+         bVal = new Date(b.date).getTime() || 0;
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [studentHistoryData, sortField, sortDirection]);
+
+  // Group to count test attempts
+  const testAttemptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    studentHistoryData.forEach(record => {
+      counts[record.testId] = (counts[record.testId] || 0) + 1;
+    });
+    return counts;
+  }, [studentHistoryData]);
+
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8 animate-in fade-in duration-200">
       {/* Header & Back Button */}
@@ -177,7 +245,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             Student Performance Rankings
           </h1>
           <p className="text-sm text-[#DDD0BF] font-medium mt-2 leading-relaxed">
-            Points are counted freshly every week from Sunday 12:00 AM to Saturday 11:59 PM. All historical points remain safely stored in student profiles and All-Time rankings.
+            Points are counted freshly every week from Sunday 12:00 AM to Saturday 11:59 PM. {isAdmin ? "As an admin, click on any student's name below to view their full assessment history." : "All historical points remain safely stored in student profiles and All-Time rankings."}
           </p>
 
           {/* Current Student's Rank Callout Card */}
@@ -247,7 +315,12 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-base text-[#2F241C] flex items-center gap-1.5">
-                    <span>{topEntry.name}</span>
+                    <span 
+                      onClick={() => handleStudentClick(topEntry)}
+                      className={isAdmin ? "cursor-pointer hover:text-[#D46244] underline decoration-[#DDD0BF] underline-offset-4 transition-colors" : ""}
+                    >
+                      {topEntry.name}
+                    </span>
                     {topEntry.isCurrentUser && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#D46244] text-white font-extrabold">
                         YOU
@@ -364,7 +437,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-[#7A6858]">
                     <p className="font-bold text-sm text-[#2F241C]">No test attempts recorded for this timeline & grade filter yet.</p>
-                    <p className="text-xs mt-1">Switch to "All-Time" above to view complete historical rankings, or complete a test to claim #1 this week!</p>
+                    <p className="text-xs mt-1">Switch to "All-Time" above to view complete historical rankings.</p>
                   </td>
                 </tr>
               ) : (
@@ -379,22 +452,23 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                           : 'hover:bg-[#FAF7F2]/60'
                       }`}
                     >
-                      {/* Rank */}
                       <td className="py-3.5 px-4 text-center font-bold">
                         {getRankBadge(student.rank || 0)}
                       </td>
 
-                      {/* Student Name */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
+                        <div 
+                          className={`flex items-center gap-2.5 ${isAdmin ? 'cursor-pointer group' : ''}`}
+                          onClick={() => handleStudentClick(student)}
+                        >
                           <div
-                            className={`w-8 h-8 rounded-full ${student.avatarColor} text-white font-heading font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs`}
+                            className={`w-8 h-8 rounded-full ${student.avatarColor} text-white font-heading font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs group-hover:ring-2 ring-[#D46244]/30 transition-all`}
                           >
                             {student.name[0]}
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-heading font-bold text-sm text-[#2F241C]">
+                              <span className={`font-heading font-bold text-sm ${isAdmin ? 'group-hover:text-[#D46244] underline decoration-transparent group-hover:decoration-[#D46244]/30 underline-offset-4 transition-colors' : 'text-[#2F241C]'}`}>
                                 {student.name}
                               </span>
                               {isUser && (
@@ -410,29 +484,24 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                         </div>
                       </td>
 
-                      {/* Class */}
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-1 rounded-md bg-[#FAF4ED] text-[#695444] border border-[#DDD0BF] font-bold text-xs">
                           Class {student.className}
                         </span>
                       </td>
 
-                      {/* Tests Completed */}
                       <td className="py-3.5 px-4 text-center font-semibold text-[#544133]">
                         {student.testsCompleted} tests
                       </td>
 
-                      {/* Total Score */}
                       <td className="py-3.5 px-4 text-right font-heading font-black text-sm text-[#2E7D32]">
                         {student.totalScore} pts
                       </td>
 
-                      {/* Time Spent */}
                       <td className="py-3.5 px-4 text-right font-mono font-semibold text-[#564436]">
                         {formatDuration(student.totalTimeSpentSeconds)}
                       </td>
 
-                      {/* Standing Badge */}
                       <td className="py-3.5 px-4 text-center">
                         {(student.rank || 0) <= 3 ? (
                           <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px]">
@@ -456,6 +525,95 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* STUDENT HISTORY MODAL (Admin Only) */}
+      {viewingStudentHistory && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#FAF7F2] rounded-3xl border border-[#DFD3C3] shadow-2xl">
+            <div className="px-6 py-5 bg-white border-b border-[#E8DEC8] flex items-center justify-between shrink-0 rounded-t-3xl">
+              <div>
+                <h3 className="font-heading font-extrabold text-xl text-[#2F241C] tracking-tight">
+                  {viewingStudentHistory.name}'s Assessment History
+                </h3>
+                <span className="text-xs font-medium text-[#8C7A6B]">
+                  Complete log of all tests submitted across all subjects.
+                </span>
+              </div>
+              <button
+                onClick={() => setViewingStudentHistory(null)}
+                className="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-[#6F5B4B] border border-[#DDD0BF] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {isHistoryLoading ? (
+                <div className="py-12 text-center text-[#7A6858] font-semibold text-sm">
+                  Fetching complete student history...
+                </div>
+              ) : studentHistoryData.length === 0 ? (
+                <div className="py-12 text-center text-[#7A6858] font-semibold text-sm">
+                  No tests recorded for this student yet.
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-[#E8DFC8] overflow-hidden shadow-xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#FAF7F2] border-b border-[#E8DFC8] text-[#715440] font-bold uppercase tracking-wider select-none">
+                        <th className="py-3 px-4 cursor-pointer hover:bg-[#F2E8DC] transition-colors" onClick={() => handleSort('date')}>
+                          <div className="flex items-center gap-1.5">Date <ArrowUpDown className="w-3 h-3" /></div>
+                        </th>
+                        <th className="py-3 px-4 cursor-pointer hover:bg-[#F2E8DC] transition-colors" onClick={() => handleSort('subjectName')}>
+                          <div className="flex items-center gap-1.5">Subject <ArrowUpDown className="w-3 h-3" /></div>
+                        </th>
+                        <th className="py-3 px-4 cursor-pointer hover:bg-[#F2E8DC] transition-colors" onClick={() => handleSort('testTitle')}>
+                          <div className="flex items-center gap-1.5">Test Name <ArrowUpDown className="w-3 h-3" /></div>
+                        </th>
+                        <th className="py-3 px-4 text-center cursor-pointer hover:bg-[#F2E8DC] transition-colors" onClick={() => handleSort('percentage')}>
+                          <div className="flex items-center justify-center gap-1.5">Score <ArrowUpDown className="w-3 h-3" /></div>
+                        </th>
+                        <th className="py-3 px-4 text-right cursor-pointer hover:bg-[#F2E8DC] transition-colors" onClick={() => handleSort('totalTimeSpentSeconds')}>
+                          <div className="flex items-center justify-end gap-1.5">Time Spent <ArrowUpDown className="w-3 h-3" /></div>
+                        </th>
+                        <th className="py-3 px-4 text-center">Attempts</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F0E6D8]">
+                      {sortedHistory.map((record) => (
+                        <tr key={record.id} className="hover:bg-[#FAF7F2] transition-colors">
+                          <td className="py-3 px-4 font-medium text-[#544133] whitespace-nowrap">{record.date}</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[#EFE5D8] text-[#4A392D] font-bold text-[10px] border border-[#DDD0BF]">
+                              <BookOpen className="w-3 h-3" /> {record.subjectName}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-bold text-[#2F241C]">{record.testTitle}</td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`font-bold px-2 py-0.5 rounded-md ${
+                                record.percentage >= 80 ? 'bg-emerald-50 text-emerald-700' :
+                                record.percentage >= 60 ? 'bg-amber-50 text-amber-700' :
+                                'bg-rose-50 text-rose-700'
+                              }`}>
+                              {record.percentage}% ({record.score}/{record.totalMarks})
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-[#564436]">
+                            {formatDuration(record.totalTimeSpentSeconds || record.timeSpentMinutes * 60)}
+                          </td>
+                          <td className="py-3 px-4 text-center text-[#7A6858] font-bold">
+                            {testAttemptCounts[record.testId]}x
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
