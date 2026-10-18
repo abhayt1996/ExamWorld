@@ -117,3 +117,9 @@ export async function getLiveLeaderboard(
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   return res.json();
 }
+
+export async function getStudentHistory(userId: string) {
+  const res = await fetch(`${API_BASE_URL}/api/student/${userId}/history`);
+  if (!res.ok) throw new Error('Failed to fetch student history');
+  return res.json();
+}
