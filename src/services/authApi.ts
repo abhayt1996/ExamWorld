@@ -11,10 +11,14 @@
 
 // If VITE_API_URL is configured (e.g. http://127.0.0.1:8000), requests will target that base;
 // otherwise empty string targets the current host / proxy.
+//export const API_BASE_URL =
+  //import.meta.env?.VITE_API_URL !== undefined && import.meta.env?.VITE_API_URL !== ''
+    //? import.meta.env.VITE_API_URL
+    //: '';
 export const API_BASE_URL =
   import.meta.env?.VITE_API_URL !== undefined && import.meta.env?.VITE_API_URL !== ''
     ? import.meta.env.VITE_API_URL
-    : '';
+    : 'https://examworld-srvu.onrender.com';
 
 export interface UserResponse {
   id: string;
