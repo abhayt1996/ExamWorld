@@ -62,7 +62,8 @@ origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
     "https://examworld.site",
-    "*"
+    "https://www.examworld.site",
+    "https://examworld.pages.dev" 
 ]
 
 app.add_middleware(
