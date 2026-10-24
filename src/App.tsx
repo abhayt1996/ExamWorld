@@ -54,6 +54,11 @@ import {
 } from './services/curriculumApi';
 import { ShieldAlert } from 'lucide-react';
 
+const API_BASE_URL =
+  import.meta.env?.VITE_API_URL !== undefined && import.meta.env?.VITE_API_URL !== ''
+    ? import.meta.env.VITE_API_URL
+    : 'https://examworld-srvu.onrender.com';
+
 // Maps raw API subject records into the frontend Record<string, Subject[]> curriculum store
 function mapApiSubjectsToStore(subjects: any[]): Record<string, Subject[]> {
   const store: Record<string, Subject[]> = {};
@@ -804,7 +809,7 @@ export default function App() {
     newTest: TopicTest
   ) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/admin/tests/add', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -866,7 +871,7 @@ export default function App() {
     testId: string
   ) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/admin/tests/${testId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`, { method: 'DELETE' });
     } catch (err) {
       console.warn('[Curriculum] Error deleting test:', err);
     }
@@ -904,7 +909,7 @@ export default function App() {
     updatedTest: TopicTest
   ) => {
     try {
-      await fetch('http://127.0.0.1:8000/api/admin/tests/add', {
+      await fetch(`${API_BASE_URL}/api/admin/tests/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
